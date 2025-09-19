@@ -1,4 +1,4 @@
-package mycompany.myzone.model;
+package com.mycompany.myzone.model;
 
 public class Colecao {
     private int id;

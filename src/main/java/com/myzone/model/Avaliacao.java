@@ -1,4 +1,4 @@
-package mycompany.myzone.model;
+package com.myzone.model;
 
 public class Avaliacao {
     private int id;
