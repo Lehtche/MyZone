@@ -1,18 +1,25 @@
-package com.mycompany.myzone.model;
+// Classe genérica (superclasse)
+package com.myzone.model;
 
-public class Midia {
-    private int id;
+public abstract class Midia {
+    private int idMidia;
     private String titulo;
-    private String tipo;
-    private int ano;
-    private String descricao;
+    private String capa;
 
-    public int getId() {
-        return id;
+    // Construtor
+    public Midia(int idMidia, String titulo, String capa) {
+        this.idMidia = idMidia;
+        this.titulo = titulo;
+        this.capa = capa;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    // Getters e Setters
+    public int getIdMidia() {
+        return idMidia;
+    }
+
+    public void setIdMidia(int idMidia) {
+        this.idMidia = idMidia;
     }
 
     public String getTitulo() {
@@ -23,27 +30,14 @@ public class Midia {
         this.titulo = titulo;
     }
 
-    public String getTipo() {
-        return tipo;
+    public String getCapa() {
+        return capa;
     }
 
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
+    public void setCapa(String capa) {
+        this.capa = capa;
     }
 
-    public int getAno() {
-        return ano;
-    }
-
-    public void setAno(int ano) {
-        this.ano = ano;
-    }
-
-    public String getDescricao() {
-        return descricao;
-    }
-
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
+    // Método genérico que pode ser sobrescrito
+    public abstract void exibirInfo();
 }
