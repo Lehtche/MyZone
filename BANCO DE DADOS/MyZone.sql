@@ -141,7 +141,7 @@ CREATE TABLE Notificacoes (
     tipo VARCHAR(50) NOT NULL, -- Ex: 'nova_avaliacao', 'pedido_amizade'
     idConteudo INT, -- ID da avaliação, amizade, etc.
     lida BOOLEAN NOT NULL DEFAULT FALSE,
-    dataCriacao DATETIME NOT NULL,
+    dataCriacao DATETIME NOT NULL default(current_timestamp()),
     FOREIGN KEY (idDestinatario) REFERENCES Usuarios(idUsuario),
     FOREIGN KEY (idOriginador) REFERENCES Usuarios(idUsuario)
 );
