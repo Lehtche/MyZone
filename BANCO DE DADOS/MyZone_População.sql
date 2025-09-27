@@ -1,4 +1,3 @@
--- Usar o banco de dados MyZone (certifique-se de que ele já foi criado)
 USE MyZone;
 
 -- Inserindo Usuários e Perfis

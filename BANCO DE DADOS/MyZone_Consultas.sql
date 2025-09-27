@@ -72,6 +72,20 @@ WHERE
     m.titulo = 'Game of Thrones' AND e.temporada = 1;
 
 
+-- 6. Mostrar todos os pedidos de amizade com status 'pendente'.
+SELECT
+    remetente.nome AS Remetente,
+    destinatario.nome AS Destinatario,
+    a.status AS Status
+FROM
+    Amizades a
+JOIN
+    Usuarios remetente ON a.idUsuario1 = remetente.idUsuario
+JOIN
+    Usuarios destinatario ON a.idUsuario2 = destinatario.idUsuario
+WHERE
+    a.status = 'pendente';
+
 -- 7. Mostrar todos os pedidos de amizade com status 'aceito'.
 SELECT
     remetente.nome AS Remetente,
@@ -85,18 +99,3 @@ JOIN
     Usuarios destinatario ON a.idUsuario2 = destinatario.idUsuario
 WHERE
     a.status = 'aceito';
-
--- 7. Mostrar todas as amizades com status 'aceito' do usuário 'Bruno Carvalho'.
-SELECT
-    CASE
-        WHEN u1.nome = 'Bruno Carvalho' THEN u2.nome
-        ELSE u1.nome
-    END AS Amigo
-FROM
-    Amizades a
-JOIN
-    Usuarios u1 ON a.idUsuario1 = u1.idUsuario
-JOIN
-    Usuarios u2 ON a.idUsuario2 = u2.idUsuario
-WHERE
-    (u1.nome = 'Bruno Carvalho' OR u2.nome = 'Bruno Carvalho') AND a.status = 'aceito';

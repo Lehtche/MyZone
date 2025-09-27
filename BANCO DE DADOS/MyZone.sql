@@ -2,7 +2,6 @@
 -- SCRIPT DE CRIAÇÃO DO BANCO DE DADOS - APLICATIVO DE AVALIAÇÃO DE MÍDIA
 -- =====================================================================
 
--- Garante que o banco de dados seja recriado do zero a cada execução.
 DROP DATABASE IF EXISTS MyZone;
 CREATE DATABASE MyZone;
 USE MyZone;
