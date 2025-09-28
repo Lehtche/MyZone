@@ -1,15 +1,8 @@
--- =====================================================================
--- SCRIPT COMPLETO: 4 SELECTs, 4 UPDATEs e 4 DELETEs
--- Baseado na população de dados e nos exemplos de UPDATE fornecidos.
--- =====================================================================
+--- SCRIPT COMPLETO: 4 SELECTs, 4 UPDATEs e 4 DELETEs
 
--- Garante que todos os comandos serão executados no banco de dados correto.
 USE MyZone;
-
-
--- =====================================================================
 -- PARTE 1: 4 EXEMPLOS DE CONSULTA (SELECT)
--- =====================================================================
+
 
 -- CONSULTA 1: Listar os usuários que mais fizeram avaliações.
 -- Demonstra o uso de JOIN, COUNT, GROUP BY e ORDER BY para criar um ranking.
@@ -74,10 +67,9 @@ WHERE
     a.status = 'pendente';
 
 
--- =====================================================================
+
 -- PARTE 2: 4 EXEMPLOS DE ATUALIZAÇÃO (UPDATE)
--- (Estes são os exemplos que você forneceu, adaptados aqui.)
--- =====================================================================
+
 
 -- UPDATE 1: ATUALIZAR A BIOGRAFIA DE UM USUÁRIO
 -- Cenário: A usuária 'Alice Rodrigues' (idUsuario = 1) quer atualizar sua biografia.
@@ -138,11 +130,8 @@ WHERE idMidia = 3;
 -- Verificação (DEPOIS):
 SELECT m.titulo, s.status FROM Series s JOIN Midias m ON s.idMidia = m.idMidia WHERE s.idMidia = 3;
 
-
--- =====================================================================
 -- PARTE 3: 4 EXEMPLOS DE EXCLUSÃO (DELETE)
--- ATENÇÃO: Comandos DELETE são permanentes. Use a cláusula WHERE!
--- =====================================================================
+
 
 -- DELETE 1: Remover uma avaliação específica.
 -- Cenário: 'Bruno Carvalho' (idUsuario = 2) decidiu remover sua avaliação de 'Blade Runner 2049' (idMidia = 2).
