@@ -1,9 +1,13 @@
 package com.myzone.controller;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 import com.myzone.dao.UsuarioDAO;
 import com.myzone.model.Usuario;
+import com.myzone.util.Conexao;
 
 public class ControleUsuario {
     private UsuarioDAO usuarioDAO;
@@ -23,7 +27,11 @@ public class ControleUsuario {
     }
 
     public List<Usuario> listarUsuarios() {
-        return usuarioDAO.listarTodos();
+        List<Usuario> usuarios = usuarioDAO.listarTodos();
+        if (usuarios.isEmpty()) {
+            System.out.println("Nenhum usuário encontrado no banco de dados.");
+        }
+        return usuarios;
     }
 
     public void atualizarUsuario(int id, String nome, String email, String senha) {
@@ -36,4 +44,17 @@ public class ControleUsuario {
         usuarioDAO.deletar(id);
         System.out.println("Usuário removido com sucesso!");
     }
+    
+    public void limparTabela() {
+    String sql = "TRUNCATE TABLE usuario";
+
+    try (Connection conn = Conexao.getConexao();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.executeUpdate();
+        System.out.println("Tabela 'usuario' limpa e AUTO_INCREMENT resetado!");
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+
 }

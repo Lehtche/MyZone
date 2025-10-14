@@ -19,6 +19,7 @@ public class CadastroUsuarioView {
             System.out.println("3 - Buscar por ID");
             System.out.println("4 - Atualizar");
             System.out.println("5 - Deletar");
+            System.out.println("9 - Limpar Tabela");
             System.out.println("0 - Sair");
             System.out.print("Escolha: ");
             opcao = sc.nextInt();
@@ -38,7 +39,8 @@ public class CadastroUsuarioView {
                 case 2:
                     List<Usuario> lista = controller.listarUsuarios();
                     lista.forEach(u -> System.out.println(u.getId() + " - " + u.getNome() + " - " + u.getEmail()));
-                    break;
+
+                break;
 
                 case 3:
                     System.out.print("ID: ");
@@ -68,6 +70,10 @@ public class CadastroUsuarioView {
                     System.out.print("ID do usuário: ");
                     int idDeleta = sc.nextInt();
                     controller.deletarUsuario(idDeleta);
+                    break;
+
+                case 6:
+                    controller.limparTabela();
                     break;
 
                 case 0:

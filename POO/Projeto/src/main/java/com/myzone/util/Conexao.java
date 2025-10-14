@@ -5,7 +5,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Conexao {
-    private static final String URL = "jdbc:mysql://localhost:3307/MyZone";
+    private static final String NOMEBANCO = "MyZone";
+    private static final String URL = "jdbc:mysql://localhost:3307/" + NOMEBANCO;
     private static final String USUARIO = "root";
     private static final String SENHA = "catolica";
 
