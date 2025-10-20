@@ -45,7 +45,7 @@ public class Avaliacao {
         return "Avaliação {" +
                 "id=" + id +
                 ", usuário=" + (usuario != null ? usuario.getNome() : "null") +
-                ", mídia=" + (midia != null ? midia.getTitulo() : "null") +
+                ", mídia=" + (midia != null ? midia.getNome() : "null") +
                 ", nota=" + nota +
                 ", comentário='" + comentario + '\'' +
                 ", data=" + dataAvaliacao +
