@@ -145,7 +145,7 @@ public class MidiaDAO {
             ex.printStackTrace();
         }
     }
-
+ // MÉTODO excluir
     public void excluir(int id) {
         String[] deletes = new String[] {
             "DELETE FROM episodio WHERE id = ?",
@@ -219,10 +219,10 @@ public class MidiaDAO {
                     } else if (rs.getInt("temporadas") != 0) { // É uma Série
                         midia = new Serie(rs.getInt("id"), rs.getString("nome"), usuario, rs.getInt("temporadas"));
                     
-                    // CORREÇÃO APLICADA AQUI
+                    
                     } else if (rs.getInt("temporada") != 0 || rs.getInt("episodio") != 0) { // É um Episódio
                         
-                        // 3. Constrói a Série-pai (agora com o nome real)
+                        // 3. Constrói a Série-pai (com nome real)
                         String nomeDaSerie = rs.getString("nomeDaSerie");
                         if (nomeDaSerie == null) {
                             nomeDaSerie = "Série Desconhecida"; // Caso o ID da série seja inválido
