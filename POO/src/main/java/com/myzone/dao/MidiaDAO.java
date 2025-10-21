@@ -83,16 +83,10 @@ public class MidiaDAO {
         }
     }
 
-    /**
-     * Atualiza uma mídia.
-     * 1. Atualiza a tabela base 'midia'.
-     * 2. Atualiza a tabela específica (filme, livro, etc.) com seus dados.
-     */
+// atualiza Tabela midia e tabela específica
     public void atualizar(Midia midia) {
-        // SQL para a tabela base
         String sql = "UPDATE midia SET nome = ?, idUsuario = ? WHERE id = ?";
 
-        // Usamos um único try-with-resources para a conexão
         try (Connection conn = Conexao.getConexao()) {
             
             // 1. Atualiza a tabela base 'midia'
@@ -174,13 +168,11 @@ public class MidiaDAO {
         }
     }
 
-    // =====================================================================
-    // MÉTODO buscarPorId CORRIGIDO
-    // =====================================================================
+
+    // MÉTODO buscarPorId
+
     public Midia buscarPorId(int id) {
-        // SQL CORRIGIDA:
-        // 1. Usa ALIASES (ex: u.nome AS u_nome) para evitar conflitos de nomes.
-        // 2. Faz um JOIN extra (m_serie) para buscar o NOME da série-pai do episódio.
+
         String sqlBase = "SELECT " +
             "m.id, m.nome, m.idUsuario, " +
             "u.id AS u_id, u.nome AS u_nome, u.email AS u_email, u.senha AS u_senha, " +
@@ -189,7 +181,7 @@ public class MidiaDAO {
             "mu.artista, mu.duracao AS mu_duracao, " +
             "s.temporadas, " +
             "e.temporada, e.episodio, e.idSerie, " +
-            "m_serie.nome AS nomeDaSerie, " +      // <-- AQUI ESTÁ A MÁGICA
+            "m_serie.nome AS nomeDaSerie, " +      // busca nome da Série PAI
             "s_serie.temporadas AS temporadasDaSerie " +
             "FROM midia m " +
             "JOIN usuario u ON m.idUsuario = u.id " +
@@ -238,7 +230,7 @@ public class MidiaDAO {
                         
                         Serie serie = new Serie(
                             rs.getInt("idSerie"), 
-                            nomeDaSerie, // <-- PUXANDO O NOME CORRETO
+                            nomeDaSerie, // Nome da série-pai
                             usuario,     // O usuário que cadastrou o EPISÓDIO
                             rs.getInt("temporadasDaSerie") // Total de temporadas da série-pai
                         );
@@ -264,12 +256,10 @@ public class MidiaDAO {
         return null;
     }
 
-    // =====================================================================
-    // MÉTODO listarTodas CORRIGIDO
-    // =====================================================================
+    // MÉTODO listarTodas
+
     public List<Midia> listarTodas() {
         List<Midia> midias = new ArrayList<>();
-        // Mesma SQL nova
         String sqlBase = "SELECT " +
             "m.id, m.nome, m.idUsuario, " +
             "u.id AS u_id, u.nome AS u_nome, u.email AS u_email, u.senha AS u_senha, " +
@@ -278,7 +268,7 @@ public class MidiaDAO {
             "mu.artista, mu.duracao AS mu_duracao, " +
             "s.temporadas, " +
             "e.temporada, e.episodio, e.idSerie, " +
-            "m_serie.nome AS nomeDaSerie, " +      // <-- AQUI ESTÁ A MÁGICA
+            "m_serie.nome AS nomeDaSerie, " +      // busca nome da Série PAI
             "s_serie.temporadas AS temporadasDaSerie " +
             "FROM midia m " +
             "JOIN usuario u ON m.idUsuario = u.id " +
@@ -296,7 +286,7 @@ public class MidiaDAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                // 1. Cria o Usuário (corrigido)
+                // 1. Cria o Usuário
                 Usuario usuario = new Usuario(
                     rs.getInt("idUsuario"),
                     rs.getString("u_nome"),
@@ -315,7 +305,6 @@ public class MidiaDAO {
                 } else if (rs.getInt("temporadas") != 0) { // É uma Série
                     midia = new Serie(rs.getInt("id"), rs.getString("nome"), usuario, rs.getInt("temporadas"));
                 
-                // CORREÇÃO APLICADA AQUI
                 } else if (rs.getInt("temporada") != 0 || rs.getInt("episodio") != 0) { // É um Episódio
                     
                     // 3. Constrói a Série-pai (com nome real)
@@ -326,7 +315,7 @@ public class MidiaDAO {
 
                     Serie serie = new Serie(
                         rs.getInt("idSerie"), 
-                        nomeDaSerie, // <-- PUXANDO O NOME CORRETO
+                        nomeDaSerie, // Nome da série-pai
                         usuario,     // O usuário que cadastrou o EPISÓDIO
                         rs.getInt("temporadasDaSerie")
                     );

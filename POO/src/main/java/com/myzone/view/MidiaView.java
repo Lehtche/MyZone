@@ -1,16 +1,22 @@
 package com.myzone.view;
 
-import com.myzone.dao.MidiaDAO;
-import com.myzone.dao.UsuarioDAO; // 1. Importar o DAO do Usuário
-import com.myzone.model.*;
-
 import java.util.List;
-import java.util.Scanner;
+import java.util.Scanner; // Importar o DAO do Usuário
+
+import com.myzone.dao.MidiaDAO;
+import com.myzone.dao.UsuarioDAO;
+import com.myzone.model.Episodio;
+import com.myzone.model.Filme;
+import com.myzone.model.Livro;
+import com.myzone.model.Midia;
+import com.myzone.model.Musica;
+import com.myzone.model.Serie;
+import com.myzone.model.Usuario;
 
 public class MidiaView {
     private final Scanner sc = new Scanner(System.in);
     private final MidiaDAO dao = new MidiaDAO();
-    private final UsuarioDAO usuarioDAO = new UsuarioDAO(); // 2. Instanciar o DAO do Usuário
+    private final UsuarioDAO usuarioDAO = new UsuarioDAO(); // Instanciar o DAO do Usuário
 
     public void menu() {
         int opcao;
@@ -55,7 +61,7 @@ public class MidiaView {
         int idUsuario = sc.nextInt();
         sc.nextLine();
 
-        // 3. CORREÇÃO: Buscar o usuário real em vez de simular
+        // Buscar o usuário real
         Usuario u = usuarioDAO.buscarPorId(idUsuario);
         if (u == null) {
             System.out.println("ERRO: Usuário com ID " + idUsuario + " não encontrado. Cadastro cancelado.");
@@ -94,7 +100,7 @@ public class MidiaView {
                 sc.nextLine();
                 yield new Serie(0, nome, u, temporadas);
             }
-            // 4. CORREÇÃO: Lógica para buscar a série real
+            //Lógica para buscar a série real
             case 5 -> {
                 System.out.print("Temporada: ");
                 int temporada = sc.nextInt();
@@ -243,8 +249,8 @@ public class MidiaView {
             if (!episodioStr.trim().isEmpty()) {
                 e.setEpisodio(Integer.parseInt(episodioStr));
             }
-            
-            // 5. CORREÇÃO: Lógica para ATUALIZAR a série associada
+
+            // ATUALIZAR a série associada
             System.out.println("Série atual: " + e.getSerie().getNome() + " (ID: " + e.getSerie().getId() + ")");
             System.out.print("Digite o NOVO ID da série (ou deixe em branco para manter): ");
             String idSerieStr = sc.nextLine();
@@ -275,7 +281,7 @@ public class MidiaView {
         System.out.println("Mídia excluída com sucesso!");
     }
 
-    /** 🔍 Exibe informações específicas dependendo do tipo da mídia */
+    // Exibe informações específicas dependendo do tipo da mídia
     private void exibirDetalhesMidia(Midia m) {
         if (m == null) return; // Segurança
         
@@ -295,7 +301,6 @@ public class MidiaView {
         } else if (m instanceof Serie s) {
             System.out.println("Temporadas: " + s.getTemporadas());
         } else if (m instanceof Episodio e) {
-            // Graças ao DAO corrigido, e.getSerie().getNome() agora funciona
             System.out.println("Série: " + e.getSerie().getNome() + " (ID: " + e.getSerie().getId() + ")");
             System.out.println("Episódio: S" + e.getTemporada() + "E" + e.getEpisodio());
         }

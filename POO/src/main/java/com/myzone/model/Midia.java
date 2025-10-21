@@ -1,6 +1,8 @@
 package com.myzone.model;
-
-public abstract class Midia {
+/*Mídia é uma classe base genérica para qualquer tipo de mídia (filmes, séries, episódios, músicas, etc.)
+ * Ela contém atributos comuns a todas as mídias, como id, nome e o usuário que a cadastrou.
+*/
+public abstract class Midia {// representa uma mídia genérica e serve como base para outras mídias específicas
     protected int id;
     protected String nome;
     protected Usuario cadastradoPor;
@@ -11,8 +13,10 @@ public abstract class Midia {
         this.cadastradoPor = cadastradoPor;
     }
 
-    public Midia() {}
+    public Midia() {} // Construtor padrão vazio usado para facilitar a criação de objetos sem inicializar atributos imediatamente, inicializando depois via setters
 
+
+// Getters e Setters(acessar e modificar os atributos da mídia de forma controlada)
     public int getId() { 
         return id; 
     }
@@ -32,5 +36,5 @@ public abstract class Midia {
         this.cadastradoPor = cadastradoPor; 
     }
 
-    public abstract String getTipo();
+    public abstract String getTipo(); // Método abstrato que deve ser implementado pelas subclasses para retornar o tipo específico da mídia (obriga as subclasses a definir seu tipo)
 }

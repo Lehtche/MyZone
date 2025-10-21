@@ -15,9 +15,9 @@ public class ControleUsuario {
         Usuario usuario = usuarioDAO.autenticar(email, senha);
         if (usuario != null) {
             usuarioLogado = usuario;
-            System.out.println("✅ Login realizado com sucesso! Bem-vindo, " + usuario.getNome());
+            System.out.println("Login realizado com sucesso! Bem-vindo, " + usuario.getNome());
         } else {
-            System.out.println("❌ Email ou senha incorretos.");
+            System.out.println("Email ou senha incorretos.");
         }
         return usuario;
     }
@@ -28,6 +28,6 @@ public class ControleUsuario {
 
     public void cadastrarUsuario(String nome, String email, String senha) {
         usuarioDAO.inserir(new Usuario(0, nome, email, senha));
-        System.out.println("✅ Usuário cadastrado com sucesso!");
+        System.out.println("Usuário cadastrado com sucesso!");
     }
 }
