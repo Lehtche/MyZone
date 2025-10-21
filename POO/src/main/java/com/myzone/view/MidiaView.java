@@ -1,6 +1,7 @@
 package com.myzone.view;
 
 import com.myzone.dao.MidiaDAO;
+import com.myzone.dao.UsuarioDAO; // 1. Importar o DAO do Usuário
 import com.myzone.model.*;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Scanner;
 public class MidiaView {
     private final Scanner sc = new Scanner(System.in);
     private final MidiaDAO dao = new MidiaDAO();
+    private final UsuarioDAO usuarioDAO = new UsuarioDAO(); // 2. Instanciar o DAO do Usuário
 
     public void menu() {
         int opcao;
@@ -53,7 +55,13 @@ public class MidiaView {
         int idUsuario = sc.nextInt();
         sc.nextLine();
 
-        Usuario u = new Usuario(idUsuario, "Usuário Simulado", "email@teste.com", "senha"); // Simulação
+        // 3. CORREÇÃO: Buscar o usuário real em vez de simular
+        Usuario u = usuarioDAO.buscarPorId(idUsuario);
+        if (u == null) {
+            System.out.println("ERRO: Usuário com ID " + idUsuario + " não encontrado. Cadastro cancelado.");
+            return; // Aborta o cadastro
+        }
+        System.out.println("Cadastrando em nome do usuário: " + u.getNome());
 
         Midia midia = switch (tipo) {
             case 1 -> {
@@ -61,6 +69,7 @@ public class MidiaView {
                 String diretor = sc.nextLine();
                 System.out.print("Duração (min): ");
                 int duracao = sc.nextInt();
+                sc.nextLine();
                 yield new Filme(0, nome, u, diretor, duracao);
             }
             case 2 -> {
@@ -68,6 +77,7 @@ public class MidiaView {
                 String autor = sc.nextLine();
                 System.out.print("Páginas: ");
                 int paginas = sc.nextInt();
+                sc.nextLine();
                 yield new Livro(0, nome, u, autor, paginas);
             }
             case 3 -> {
@@ -75,21 +85,44 @@ public class MidiaView {
                 String artista = sc.nextLine();
                 System.out.print("Duração (min): ");
                 int duracao = sc.nextInt();
+                sc.nextLine();
                 yield new Musica(0, nome, u, artista, duracao);
             }
             case 4 -> {
                 System.out.print("Nº de temporadas: ");
                 int temporadas = sc.nextInt();
+                sc.nextLine();
                 yield new Serie(0, nome, u, temporadas);
             }
+            // 4. CORREÇÃO: Lógica para buscar a série real
             case 5 -> {
                 System.out.print("Temporada: ");
                 int temporada = sc.nextInt();
                 System.out.print("Episódio: ");
                 int episodio = sc.nextInt();
-                System.out.print("ID da série: ");
+                System.out.print("ID da série (a qual este episódio pertence): ");
                 int idSerie = sc.nextInt();
-                Serie serie = new Serie(idSerie, "Série Referência", u, 0);
+                sc.nextLine(); // <-- Consome o "Enter"
+
+                // Busca a mídia com o ID informado
+                Midia midiaAssociada = dao.buscarPorId(idSerie);
+
+                // Validação: Verifica se a mídia existe E se é do tipo 'Serie'
+                if (midiaAssociada == null) {
+                    System.out.println("ERRO: Nenhuma mídia encontrada com o ID " + idSerie + ". Cadastro de episódio cancelado.");
+                    yield null; // Aborta a criação
+                    
+                } else if (!(midiaAssociada instanceof Serie)) {
+                    // Se encontrou, mas não é uma Série
+                    System.out.println("ERRO: A mídia " + idSerie + " é um " + midiaAssociada.getTipo() + ", não uma Série. Cadastro cancelado.");
+                    yield null; // Aborta a criação
+                }
+
+                // Se passou nas validações, faz o "cast"
+                Serie serie = (Serie) midiaAssociada;
+                System.out.println("Associando episódio à série: " + serie.getNome());
+
+                // Cria o episódio usando o objeto 'serie' real
                 yield new Episodio(0, nome, u, temporada, episodio, serie);
             }
             default -> null;
@@ -99,13 +132,16 @@ public class MidiaView {
             dao.inserir(midia);
             System.out.println("Mídia cadastrada com sucesso!");
         } else {
-            System.out.println("Tipo inválido!");
+            // A mensagem de erro específica já foi dada no 'case 5'
+            if (tipo != 5) {
+                 System.out.println("Tipo inválido!");
+            }
         }
     }
 
     private void listarMidias() {
         List<Midia> midias = dao.listarTodas();
-        System.out.println("\nMídias cadastradas:");
+        System.out.println("\n📋 Mídias cadastradas:");
         if (midias.isEmpty()) {
             System.out.println("(Nenhuma mídia encontrada)");
         } else {
@@ -118,6 +154,7 @@ public class MidiaView {
     private void buscarMidia() {
         System.out.print("\nDigite o ID da mídia: ");
         int id = sc.nextInt();
+        sc.nextLine();
         Midia m = dao.buscarPorId(id);
         if (m != null) {
             System.out.println("\nMídia encontrada:");
@@ -139,57 +176,90 @@ public class MidiaView {
             return;
         }
 
-        System.out.print("Novo nome: ");
+        System.out.println("\nEditando mídia: " + m.getNome());
+        System.out.print("Novo nome (" + m.getNome() + "): ");
         String novoNome = sc.nextLine();
-        m.setNome(novoNome);
+        if (!novoNome.trim().isEmpty()) {
+            m.setNome(novoNome); // Só atualiza se não for vazio
+        }
 
-        // Agora, pede os campos específicos baseado no TIPO da mídia
+        // Pede os campos específicos baseado no TIPO da mídia
         
         if (m instanceof Filme f) {
-            System.out.print("Novo Diretor: ");
-            f.setDiretor(sc.nextLine()); // Atualiza o objeto 'f' (que é o mesmo que 'm')
+            System.out.print("Novo Diretor (" + f.getDiretor() + "): ");
+            String novoDiretor = sc.nextLine();
+            if (!novoDiretor.trim().isEmpty()) {
+                 f.setDiretor(novoDiretor);
+            }
             
-            System.out.print("Nova Duração (min): ");
-            f.setDuracao(sc.nextInt());
-            sc.nextLine(); // Consumir newline
+            System.out.print("Nova Duração (min) (" + f.getDuracao() + "): ");
+            String duracaoStr = sc.nextLine();
+            if (!duracaoStr.trim().isEmpty()) {
+                 f.setDuracao(Integer.parseInt(duracaoStr));
+            }
             
         } else if (m instanceof Livro l) {
-            System.out.print("Novo Autor: ");
-            l.setAutor(sc.nextLine());
+            System.out.print("Novo Autor (" + l.getAutor() + "): ");
+            String novoAutor = sc.nextLine();
+             if (!novoAutor.trim().isEmpty()) {
+                l.setAutor(novoAutor);
+             }
             
-            System.out.print("Novas Páginas: ");
-            l.setPaginas(sc.nextInt());
-            sc.nextLine();
+            System.out.print("Novas Páginas (" + l.getPaginas() + "): ");
+            String paginasStr = sc.nextLine();
+             if (!paginasStr.trim().isEmpty()) {
+                l.setPaginas(Integer.parseInt(paginasStr));
+             }
             
         } else if (m instanceof Musica mu) {
-            System.out.print("Novo Artista: ");
-            mu.setArtista(sc.nextLine());
+            System.out.print("Novo Artista (" + mu.getArtista() + "): ");
+            String novoArtista = sc.nextLine();
+            if (!novoArtista.trim().isEmpty()) {
+                mu.setArtista(novoArtista);
+            }
             
-            System.out.print("Nova Duração (min): ");
-            mu.setDuracao(sc.nextInt());
-            sc.nextLine();
+            System.out.print("Nova Duração (min) (" + mu.getDuracao() + "): ");
+            String duracaoStr = sc.nextLine();
+            if (!duracaoStr.trim().isEmpty()) {
+                mu.setDuracao(Integer.parseInt(duracaoStr));
+            }
             
         } else if (m instanceof Serie s) {
-            System.out.print("Nº de temporadas: ");
-            s.setTemporadas(sc.nextInt());
-            sc.nextLine();
+            System.out.print("Nº de temporadas (" + s.getTemporadas() + "): ");
+            String temporadasStr = sc.nextLine();
+             if (!temporadasStr.trim().isEmpty()) {
+                s.setTemporadas(Integer.parseInt(temporadasStr));
+             }
             
         } else if (m instanceof Episodio e) {
-            System.out.print("Nova Temporada: ");
-            e.setTemporada(sc.nextInt());
-            sc.nextLine();
+            System.out.print("Nova Temporada (" + e.getTemporada() + "): ");
+            String temporadaStr = sc.nextLine();
+            if (!temporadaStr.trim().isEmpty()) {
+                 e.setTemporada(Integer.parseInt(temporadaStr));
+            }
             
-            System.out.print("Novo Episódio: ");
-            e.setEpisodio(sc.nextInt());
-            sc.nextLine();
+            System.out.print("Novo Episódio (" + e.getEpisodio() + "): ");
+            String episodioStr = sc.nextLine();
+            if (!episodioStr.trim().isEmpty()) {
+                e.setEpisodio(Integer.parseInt(episodioStr));
+            }
             
-            System.out.print("Novo ID da série: ");
-            int idSerie = sc.nextInt();
-            sc.nextLine();
-            
-            // Atualiza a referência da série dentro do episódio
-            // (O DAO só precisa do ID, então podemos só atualizar o ID do objeto)
-            e.getSerie().setId(idSerie); 
+            // 5. CORREÇÃO: Lógica para ATUALIZAR a série associada
+            System.out.println("Série atual: " + e.getSerie().getNome() + " (ID: " + e.getSerie().getId() + ")");
+            System.out.print("Digite o NOVO ID da série (ou deixe em branco para manter): ");
+            String idSerieStr = sc.nextLine();
+
+            if (!idSerieStr.trim().isEmpty()) {
+                int idSerie = Integer.parseInt(idSerieStr);
+                Midia midiaSerie = dao.buscarPorId(idSerie);
+
+                if (midiaSerie != null && midiaSerie instanceof Serie) {
+                    e.setSerie((Serie) midiaSerie); // Atualiza o objeto Série inteiro
+                    System.out.println("Série associada atualizada para: " + midiaSerie.getNome());
+                } else {
+                    System.out.println("ID da série não encontrado ou inválido. A série NÃO foi alterada.");
+                }
+            }
         }
 
         dao.atualizar(m);
@@ -200,15 +270,18 @@ public class MidiaView {
         listarMidias();
         System.out.print("\nDigite o ID da mídia para excluir: ");
         int id = sc.nextInt();
+        sc.nextLine();
         dao.excluir(id);
         System.out.println("Mídia excluída com sucesso!");
     }
 
     /** 🔍 Exibe informações específicas dependendo do tipo da mídia */
     private void exibirDetalhesMidia(Midia m) {
-        System.out.println("\nID: " + m.getId() +
-                "\nTipo: " + m.getTipo() +
-                "\nNome: " + m.getNome());
+        if (m == null) return; // Segurança
+        
+        System.out.println("\n---------------------------------");
+        System.out.println("ID: " + m.getId() + " (" + m.getTipo() + ")");
+        System.out.println("Nome: " + m.getNome());
 
         if (m instanceof Filme f) {
             System.out.println("Diretor: " + f.getDiretor());
@@ -222,9 +295,11 @@ public class MidiaView {
         } else if (m instanceof Serie s) {
             System.out.println("Temporadas: " + s.getTemporadas());
         } else if (m instanceof Episodio e) {
-            System.out.println("Série: " + e.getSerie().getNome());
-            System.out.println("Temporada: " + e.getTemporada());
-            System.out.println("Episódio: " + e.getEpisodio());
+            // Graças ao DAO corrigido, e.getSerie().getNome() agora funciona
+            System.out.println("Série: " + e.getSerie().getNome() + " (ID: " + e.getSerie().getId() + ")");
+            System.out.println("Episódio: S" + e.getTemporada() + "E" + e.getEpisodio());
         }
+        System.out.println("Cadastrado por: " + m.getCadastradoPor().getNome());
+        System.out.println("---------------------------------");
     }
 }

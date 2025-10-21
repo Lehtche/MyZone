@@ -83,8 +83,7 @@ public class MidiaDAO {
         }
     }
 
-    // Atualiza uma mídia: simplificação prática -> atualiza tabela midia e regrava a tabela específica
-/**
+    /**
      * Atualiza uma mídia.
      * 1. Atualiza a tabela base 'midia'.
      * 2. Atualiza a tabela específica (filme, livro, etc.) com seus dados.
@@ -105,7 +104,6 @@ public class MidiaDAO {
             }
 
             // 2. Atualiza a tabela específica correspondente
-            //    Isto substitui a lógica de DELETAR e REINSERIR
             
             if (midia instanceof Filme f) {
                 String sqlF = "UPDATE filme SET diretor = ?, duracao = ? WHERE id = ?";
@@ -176,16 +174,33 @@ public class MidiaDAO {
         }
     }
 
-    // Buscar por ID
+    // =====================================================================
+    // MÉTODO buscarPorId CORRIGIDO
+    // =====================================================================
     public Midia buscarPorId(int id) {
-        String sqlBase = "SELECT * FROM midia m " +
-                         "LEFT JOIN filme f ON m.id=f.id " +
-                         "LEFT JOIN livro l ON m.id=l.id " +
-                         "LEFT JOIN musica mu ON m.id=mu.id " +
-                         "LEFT JOIN serie s ON m.id=s.id " +
-                         "LEFT JOIN episodio e ON m.id=e.id " +
-                         "JOIN usuario u ON m.idUsuario = u.id " +
-                         "WHERE m.id = ?";
+        // SQL CORRIGIDA:
+        // 1. Usa ALIASES (ex: u.nome AS u_nome) para evitar conflitos de nomes.
+        // 2. Faz um JOIN extra (m_serie) para buscar o NOME da série-pai do episódio.
+        String sqlBase = "SELECT " +
+            "m.id, m.nome, m.idUsuario, " +
+            "u.id AS u_id, u.nome AS u_nome, u.email AS u_email, u.senha AS u_senha, " +
+            "f.diretor, f.duracao AS f_duracao, " +
+            "l.autor, l.paginas, " +
+            "mu.artista, mu.duracao AS mu_duracao, " +
+            "s.temporadas, " +
+            "e.temporada, e.episodio, e.idSerie, " +
+            "m_serie.nome AS nomeDaSerie, " +      // <-- AQUI ESTÁ A MÁGICA
+            "s_serie.temporadas AS temporadasDaSerie " +
+            "FROM midia m " +
+            "JOIN usuario u ON m.idUsuario = u.id " +
+            "LEFT JOIN filme f ON m.id = f.id " +
+            "LEFT JOIN livro l ON m.id = l.id " +
+            "LEFT JOIN musica mu ON m.id = mu.id " +
+            "LEFT JOIN serie s ON m.id = s.id " +        // Para mídias que SÃO séries
+            "LEFT JOIN episodio e ON m.id = e.id " +    // Para mídias que SÃO episódios
+            "LEFT JOIN midia m_serie ON e.idSerie = m_serie.id " + // Pega o nome da Série PAI
+            "LEFT JOIN serie s_serie ON e.idSerie = s_serie.id " + // Pega as temporadas da Série PAI
+            "WHERE m.id = ?";
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sqlBase)) {
@@ -193,26 +208,49 @@ public class MidiaDAO {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    // 1. Cria o Usuário (corrigido para usar os aliases)
                     Usuario usuario = new Usuario(
                         rs.getInt("idUsuario"),
-                        rs.getString("nome"),
-                        rs.getString("email"),
-                        rs.getString("senha")
+                        rs.getString("u_nome"),  // Corrigido (antes era "nome")
+                        rs.getString("u_email"),
+                        rs.getString("u_senha")
                     );
 
                     Midia midia = null;
+                    // 2. Verifica o tipo da Mídia
                     if (rs.getString("diretor") != null) {
-                        midia = new Filme(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("diretor"), rs.getInt("duracao"));
+                        midia = new Filme(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("diretor"), rs.getInt("f_duracao"));
                     } else if (rs.getString("autor") != null) {
                         midia = new Livro(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("autor"), rs.getInt("paginas"));
                     } else if (rs.getString("artista") != null) {
-                        midia = new Musica(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("artista"), rs.getInt("duracao"));
-                    } else if (rs.getInt("temporadas") != 0) {
+                        midia = new Musica(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("artista"), rs.getInt("mu_duracao"));
+                    } else if (rs.getInt("temporadas") != 0) { // É uma Série
                         midia = new Serie(rs.getInt("id"), rs.getString("nome"), usuario, rs.getInt("temporadas"));
-                    } else if (rs.getInt("temporada") != 0 || rs.getInt("episodio") != 0) {
-                        // Construção mínima de Série para referência
-                        Serie serie = new Serie(rs.getInt("idSerie"), rs.getString("nomeSerie") == null ? "Série Referência" : rs.getString("nomeSerie"), usuario, rs.getInt("temporadas"));
-                        midia = new Episodio(rs.getInt("id"), rs.getString("nome"), usuario, rs.getInt("temporada"), rs.getInt("episodio"), serie);
+                    
+                    // CORREÇÃO APLICADA AQUI
+                    } else if (rs.getInt("temporada") != 0 || rs.getInt("episodio") != 0) { // É um Episódio
+                        
+                        // 3. Constrói a Série-pai (agora com o nome real)
+                        String nomeDaSerie = rs.getString("nomeDaSerie");
+                        if (nomeDaSerie == null) {
+                            nomeDaSerie = "Série Desconhecida"; // Caso o ID da série seja inválido
+                        }
+                        
+                        Serie serie = new Serie(
+                            rs.getInt("idSerie"), 
+                            nomeDaSerie, // <-- PUXANDO O NOME CORRETO
+                            usuario,     // O usuário que cadastrou o EPISÓDIO
+                            rs.getInt("temporadasDaSerie") // Total de temporadas da série-pai
+                        );
+                        
+                        midia = new Episodio(
+                            rs.getInt("id"), 
+                            rs.getString("nome"), // Nome do episódio
+                            usuario, 
+                            rs.getInt("temporada"), 
+                            rs.getInt("episodio"), 
+                            serie // Objeto Série-pai completo
+                        );
                     }
 
                     return midia;
@@ -226,44 +264,86 @@ public class MidiaDAO {
         return null;
     }
 
-    // Listar todas as mídias
+    // =====================================================================
+    // MÉTODO listarTodas CORRIGIDO
+    // =====================================================================
     public List<Midia> listarTodas() {
         List<Midia> midias = new ArrayList<>();
-        String sqlBase = "SELECT * FROM midia m " +
-                         "LEFT JOIN filme f ON m.id=f.id " +
-                         "LEFT JOIN livro l ON m.id=l.id " +
-                         "LEFT JOIN musica mu ON m.id=mu.id " +
-                         "LEFT JOIN serie s ON m.id=s.id " +
-                         "LEFT JOIN episodio e ON m.id=e.id " +
-                         "JOIN usuario u ON m.idUsuario = u.id";
+        // Mesma SQL nova
+        String sqlBase = "SELECT " +
+            "m.id, m.nome, m.idUsuario, " +
+            "u.id AS u_id, u.nome AS u_nome, u.email AS u_email, u.senha AS u_senha, " +
+            "f.diretor, f.duracao AS f_duracao, " +
+            "l.autor, l.paginas, " +
+            "mu.artista, mu.duracao AS mu_duracao, " +
+            "s.temporadas, " +
+            "e.temporada, e.episodio, e.idSerie, " +
+            "m_serie.nome AS nomeDaSerie, " +      // <-- AQUI ESTÁ A MÁGICA
+            "s_serie.temporadas AS temporadasDaSerie " +
+            "FROM midia m " +
+            "JOIN usuario u ON m.idUsuario = u.id " +
+            "LEFT JOIN filme f ON m.id = f.id " +
+            "LEFT JOIN livro l ON m.id = l.id " +
+            "LEFT JOIN musica mu ON m.id = mu.id " +
+            "LEFT JOIN serie s ON m.id = s.id " +        // Para mídias que SÃO séries
+            "LEFT JOIN episodio e ON m.id = e.id " +    // Para mídias que SÃO episódios
+            "LEFT JOIN midia m_serie ON e.idSerie = m_serie.id " + // Pega o nome da Série PAI
+            "LEFT JOIN serie s_serie ON e.idSerie = s_serie.id " + // Pega as temporadas da Série PAI
+            "ORDER BY m.id"; // Bônus: ordenado para vir sempre igual
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sqlBase);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
+                // 1. Cria o Usuário (corrigido)
                 Usuario usuario = new Usuario(
-                        rs.getInt("idUsuario"),
-                        rs.getString("nome"),
-                        rs.getString("email"),
-                        rs.getString("senha")
+                    rs.getInt("idUsuario"),
+                    rs.getString("u_nome"),
+                    rs.getString("u_email"),
+                    rs.getString("u_senha")
                 );
 
-                Midia midia;
+                Midia midia = null;
+                // 2. Verifica o tipo da Mídia
                 if (rs.getString("diretor") != null) {
-                    midia = new Filme(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("diretor"), rs.getInt("duracao"));
+                    midia = new Filme(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("diretor"), rs.getInt("f_duracao"));
                 } else if (rs.getString("autor") != null) {
                     midia = new Livro(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("autor"), rs.getInt("paginas"));
                 } else if (rs.getString("artista") != null) {
-                    midia = new Musica(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("artista"), rs.getInt("duracao"));
-                } else if (rs.getInt("temporadas") != 0) {
+                    midia = new Musica(rs.getInt("id"), rs.getString("nome"), usuario, rs.getString("artista"), rs.getInt("mu_duracao"));
+                } else if (rs.getInt("temporadas") != 0) { // É uma Série
                     midia = new Serie(rs.getInt("id"), rs.getString("nome"), usuario, rs.getInt("temporadas"));
-                } else {
-                    Serie serie = new Serie(rs.getInt("idSerie"), "Série Referência", usuario, 0); // apenas referência
-                    midia = new Episodio(rs.getInt("id"), rs.getString("nome"), usuario, rs.getInt("temporada"), rs.getInt("episodio"), serie);
+                
+                // CORREÇÃO APLICADA AQUI
+                } else if (rs.getInt("temporada") != 0 || rs.getInt("episodio") != 0) { // É um Episódio
+                    
+                    // 3. Constrói a Série-pai (com nome real)
+                    String nomeDaSerie = rs.getString("nomeDaSerie");
+                    if (nomeDaSerie == null) {
+                        nomeDaSerie = "Série Desconhecida"; // Fallback
+                    }
+
+                    Serie serie = new Serie(
+                        rs.getInt("idSerie"), 
+                        nomeDaSerie, // <-- PUXANDO O NOME CORRETO
+                        usuario,     // O usuário que cadastrou o EPISÓDIO
+                        rs.getInt("temporadasDaSerie")
+                    );
+                    
+                    midia = new Episodio(
+                        rs.getInt("id"), 
+                        rs.getString("nome"), // Nome do episódio
+                        usuario, 
+                        rs.getInt("temporada"), 
+                        rs.getInt("episodio"), 
+                        serie // Objeto Série-pai completo
+                    );
                 }
 
-                midias.add(midia);
+                if (midia != null) { // Adiciona à lista apenas se foi um tipo reconhecido
+                    midias.add(midia);
+                }
             }
 
         } catch (SQLException ex) {
