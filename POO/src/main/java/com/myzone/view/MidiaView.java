@@ -1,8 +1,7 @@
 package com.myzone.view;
 
 import java.util.List;
-import java.util.Scanner; // Importar o DAO do Usuário
-
+import java.util.Scanner; 
 import com.myzone.dao.MidiaDAO;
 import com.myzone.dao.UsuarioDAO;
 import com.myzone.model.Episodio;
@@ -16,21 +15,35 @@ import com.myzone.model.Usuario;
 public class MidiaView {
     private final Scanner sc = new Scanner(System.in);
     private final MidiaDAO dao = new MidiaDAO();
-    private final UsuarioDAO usuarioDAO = new UsuarioDAO(); // Instanciar o DAO do Usuário
+    private final UsuarioDAO usuarioDAO = new UsuarioDAO(); 
+    
+    private Usuario usuarioLogado; 
 
-    public void menu() {
+    public void menu(Usuario usuario) {
+        this.usuarioLogado = usuario;
+        
+        if (this.usuarioLogado == null) {
+            System.out.println("Erro: Ninguém está logado. Saindo do menu de mídias.");
+            return;
+        }
+
         int opcao;
         do {
-            System.out.println("\n===== GERENCIAMENTO DE MÍDIAS =====");
+            System.out.println("\n===== GERENCIAMENTO DE MÍDIAS (Logado como: " + usuarioLogado.getNome() + ") =====");
             System.out.println("1. Cadastrar nova mídia");
             System.out.println("2. Listar todas as mídias");
             System.out.println("3. Buscar mídia por ID");
             System.out.println("4. Atualizar mídia");
             System.out.println("5. Excluir mídia");
-            System.out.println("0. Sair");
+            System.out.println("0. Deslogar (Sair do menu)");
             System.out.print("Escolha: ");
-            opcao = sc.nextInt();
-            sc.nextLine();
+            
+            try {
+                 opcao = sc.nextInt();
+            } catch (Exception e) {
+                 opcao = -1;
+            }
+            sc.nextLine(); 
 
             switch (opcao) {
                 case 1 -> cadastrarMidia();
@@ -38,7 +51,7 @@ public class MidiaView {
                 case 3 -> buscarMidia();
                 case 4 -> atualizarMidia();
                 case 5 -> excluirMidia();
-                case 0 -> System.out.println("Encerrando o programa...");
+                case 0 -> System.out.println("Deslogando...");
                 default -> System.out.println("Opção inválida!");
             }
         } while (opcao != 0);
@@ -57,16 +70,9 @@ public class MidiaView {
 
         System.out.print("Nome da mídia: ");
         String nome = sc.nextLine();
-        System.out.print("ID do usuário que cadastrou: ");
-        int idUsuario = sc.nextInt();
-        sc.nextLine();
-
-        // Buscar o usuário real
-        Usuario u = usuarioDAO.buscarPorId(idUsuario);
-        if (u == null) {
-            System.out.println("ERRO: Usuário com ID " + idUsuario + " não encontrado. Cadastro cancelado.");
-            return; // Aborta o cadastro
-        }
+        
+        Usuario u = this.usuarioLogado;
+        
         System.out.println("Cadastrando em nome do usuário: " + u.getNome());
 
         Midia midia = switch (tipo) {
@@ -100,7 +106,6 @@ public class MidiaView {
                 sc.nextLine();
                 yield new Serie(0, nome, u, temporadas);
             }
-            //Lógica para buscar a série real
             case 5 -> {
                 System.out.print("Temporada: ");
                 int temporada = sc.nextInt();
@@ -108,27 +113,22 @@ public class MidiaView {
                 int episodio = sc.nextInt();
                 System.out.print("ID da série (a qual este episódio pertence): ");
                 int idSerie = sc.nextInt();
-                sc.nextLine(); // <-- Consome o "Enter"
+                sc.nextLine(); 
 
-                // Busca a mídia com o ID informado
                 Midia midiaAssociada = dao.buscarPorId(idSerie);
 
-                // Validação: Verifica se a mídia existe E se é do tipo 'Serie'
                 if (midiaAssociada == null) {
                     System.out.println("ERRO: Nenhuma mídia encontrada com o ID " + idSerie + ". Cadastro de episódio cancelado.");
-                    yield null; // Aborta a criação
+                    yield null; 
                     
                 } else if (!(midiaAssociada instanceof Serie)) {
-                    // Se encontrou, mas não é uma Série
                     System.out.println("ERRO: A mídia " + idSerie + " é um " + midiaAssociada.getTipo() + ", não uma Série. Cadastro cancelado.");
-                    yield null; // Aborta a criação
+                    yield null; 
                 }
 
-                // Se passou nas validações, faz o "cast"
                 Serie serie = (Serie) midiaAssociada;
                 System.out.println("Associando episódio à série: " + serie.getNome());
 
-                // Cria o episódio usando o objeto 'serie' real
                 yield new Episodio(0, nome, u, temporada, episodio, serie);
             }
             default -> null;
@@ -138,16 +138,16 @@ public class MidiaView {
             dao.inserir(midia);
             System.out.println("Mídia cadastrada com sucesso!");
         } else {
-            // A mensagem de erro específica já foi dada no 'case 5'
             if (tipo != 5) {
-                 System.out.println("Tipo inválido!");
+                 System.out.println("Tipo inválido ou cadastro cancelado.");
             }
         }
     }
 
     private void listarMidias() {
-        List<Midia> midias = dao.listarTodas();
-        System.out.println("\n📋 Mídias cadastradas:");
+        List<Midia> midias = dao.listarTodas(); 
+        
+        System.out.println("\nMídias cadastradas (no total):");
         if (midias.isEmpty()) {
             System.out.println("(Nenhuma mídia encontrada)");
         } else {
@@ -171,7 +171,8 @@ public class MidiaView {
     }
 
     private void atualizarMidia() {
-        listarMidias();
+        listarMidias(); 
+        
         System.out.print("\nDigite o ID da mídia para atualizar: ");
         int id = sc.nextInt();
         sc.nextLine();
@@ -182,15 +183,18 @@ public class MidiaView {
             return;
         }
 
+        if (m.getCadastradoPor().getId() != this.usuarioLogado.getId()) {
+            System.out.println("ERRO: Você não tem permissão para editar esta mídia.");
+            return;
+        }
+
         System.out.println("\nEditando mídia: " + m.getNome());
         System.out.print("Novo nome (" + m.getNome() + "): ");
         String novoNome = sc.nextLine();
         if (!novoNome.trim().isEmpty()) {
-            m.setNome(novoNome); // Só atualiza se não for vazio
+            m.setNome(novoNome);
         }
 
-        // Pede os campos específicos baseado no TIPO da mídia
-        
         if (m instanceof Filme f) {
             System.out.print("Novo Diretor (" + f.getDiretor() + "): ");
             String novoDiretor = sc.nextLine();
@@ -250,7 +254,6 @@ public class MidiaView {
                 e.setEpisodio(Integer.parseInt(episodioStr));
             }
 
-            // ATUALIZAR a série associada
             System.out.println("Série atual: " + e.getSerie().getNome() + " (ID: " + e.getSerie().getId() + ")");
             System.out.print("Digite o NOVO ID da série (ou deixe em branco para manter): ");
             String idSerieStr = sc.nextLine();
@@ -260,7 +263,7 @@ public class MidiaView {
                 Midia midiaSerie = dao.buscarPorId(idSerie);
 
                 if (midiaSerie != null && midiaSerie instanceof Serie) {
-                    e.setSerie((Serie) midiaSerie); // Atualiza o objeto Série inteiro
+                    e.setSerie((Serie) midiaSerie); 
                     System.out.println("Série associada atualizada para: " + midiaSerie.getNome());
                 } else {
                     System.out.println("ID da série não encontrado ou inválido. A série NÃO foi alterada.");
@@ -277,13 +280,23 @@ public class MidiaView {
         System.out.print("\nDigite o ID da mídia para excluir: ");
         int id = sc.nextInt();
         sc.nextLine();
+
+        Midia m = dao.buscarPorId(id);
+        if (m == null) {
+            System.out.println("Mídia não encontrada!");
+            return;
+        }
+        if (m.getCadastradoPor().getId() != this.usuarioLogado.getId()) {
+            System.out.println("ERRO: Você não tem permissão para excluir esta mídia.");
+            return;
+        }
+
         dao.excluir(id);
         System.out.println("Mídia excluída com sucesso!");
     }
 
-    // Exibe informações específicas dependendo do tipo da mídia
     private void exibirDetalhesMidia(Midia m) {
-        if (m == null) return; // Segurança
+        if (m == null) return;
         
         System.out.println("\n---------------------------------");
         System.out.println("ID: " + m.getId() + " (" + m.getTipo() + ")");

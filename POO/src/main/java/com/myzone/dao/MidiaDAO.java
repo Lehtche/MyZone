@@ -200,10 +200,10 @@ public class MidiaDAO {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    // 1. Cria o Usuário (corrigido para usar os aliases)
+                    // 1. Cria o Usuário
                     Usuario usuario = new Usuario(
                         rs.getInt("idUsuario"),
-                        rs.getString("u_nome"),  // Corrigido (antes era "nome")
+                        rs.getString("u_nome"),
                         rs.getString("u_email"),
                         rs.getString("u_senha")
                     );

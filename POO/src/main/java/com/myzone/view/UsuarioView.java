@@ -1,7 +1,6 @@
 package com.myzone.view;
 
 import java.util.Scanner;
-
 import com.myzone.controller.ControleUsuario;
 import com.myzone.model.Usuario;
 
