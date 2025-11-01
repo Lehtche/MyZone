@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Zone - Trabalho Final</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ======== TELA LOGIN ======== -->
+    <section id="tela-login" class="tela-container auth-page">
+        <div class="auth-wrapper">
+            <div class="auth-logo">
+                <h1 class="logo-text">My</h1>
+                <h1 class="logo-text">Zone</h1>
+            </div>
+
+            <div class="auth-form-container">
+                <h2>LOGIN</h2>
+                
+                <div class="input-group">
+                    <label for="login-email">E-mail</label>
+                    <input type="email" id="login-email">
+                </div>
+                
+                <div class="input-group">
+                    <label for="login-senha">Senha</label>
+                    <input type="password" id="login-senha">
+                </div>
+                
+                <a href="#" class="auth-link">Esqueceu senha?</a>
+                
+                <button type="button" class="btn-auth" id="btn-entrar-app">Entrar</button>
+                
+                <p>Não tem conta?</p>
+                <button type="button" class="btn-auth btn-secondary" id="btn-ir-para-cadastro">Cadastre-se</button>
+            </div>
+            
+            <div class="auth-icons">
+                <span>🎬</span>
+                <span>🎥</span>
+                <span>📷</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== TELA CADASTRO ======== -->
+    <section id="tela-cadastro" class="tela-container auth-page escondido">
+        <div class="auth-wrapper">
+            <div class="auth-form-container">
+                <h2>Faça seu cadastro:</h2>
+                
+                <div class="input-group">
+                    <label for="cad-email">E-mail</label>
+                    <input type="email" id="cad-email">
+                </div>
+                
+                <div class="input-group">
+                    <label for="cad-nome">Nome</label>
+                    <input type="text" id="cad-nome">
+                </div>
+
+                <div class="input-group">
+                    <label for="cad-senha">Senha</label>
+                    <input type="password" id="cad-senha">
+                </div>
+                
+                <div class="input-group">
+                    <label for="cad-confirma-senha">Confirmar senha</label>
+                    <input type="password" id="cad-confirma-senha">
+                </div>
+                
+                <div class="input-group">
+                    <label for="cad-nascimento">Data de Nascimento</label>
+                    <input type="text" id="cad-nascimento" placeholder="00/00/0000">
+                </div>
+                
+                <button type="button" class="btn-auth" id="btn-enviar-cadastro">Enviar</button>
+                <button type="button" class="btn-auth btn-secondary" id="btn-ir-para-login">Entrar</button>
+            </div>
+            
+            <div class="auth-logo">
+                <h1 class="logo-text">My</h1>
+                <h1 class="logo-text">Zone</h1>
+                <span>⭐</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== TELA APP ======== -->
+    <section id="tela-app" class="tela-container escondido">
+        <div class="window-frame">
+            <header class="header-bar shiny-box">
+                <div class="logo" id="btn-voltar-home">My Zone</div>
+                <div class="search-bar">
+                    <input type="text" placeholder="Pesquisar">
+                </div>
+                <div class="header-icons">
+                    <span>🔔</span>
+                    <span id="btn-abrir-amigos" class="header-icon-btn">👤</span>
+                    <span id="btn-abrir-config" class="header-icon-btn">⚙️</span>
+                </div>
+            </header>
+
+            <div class="main-content">
+                <aside class="sidebar">
+                    <div class="profile-card shiny-box">
+                        <button class="btn-menu-perfil" id="btn-menu-perfil">...</button>
+                        
+                        <div id="menu-perfil" class="menu-perfil escondido">
+                            <ul>
+                                <li id="btn-atualizar-foto">Atualizar foto</li>
+                                <li id="btn-atualizar-dados">Atualizar dados</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="profile-pic-bg"></div>
+                        <div class="profile-user-info">
+                            Letícia #001 <span class="status-dot"></span>
+                        </div>
+                        <div class="profile-bio-box">Essa é a minha Bio :D</div>
+                    </div>
+                </aside>
+
+                <main class="feed">
+                    <section id="tela-atualizacoes">
+                        <h2>Atualizações Recentes</h2>
+                        <div class="updates-container">
+                            <div class="update-card">...</div>
+                            <div class="update-card">...</div>
+                        </div>
+                    </section>
+                    
+                    <section id="tela-amigos" class="escondido">
+                        <h2>Amigos</h2>
+                        <div class="friends-list">
+                            <div class="friend-icon"></div>
+                            <div class="friend-icon"></div>
+                        </div>
+                    </section>
+
+                    <section id="tela-atualizacoes-amigos" class="escondido">
+                        <h2>Atualizações de Amigos</h2>
+                        <div class="amigos-grid">
+                            <div class="amigo-update-item">
+                                <div class="amigo-avatar puffle-rosa"></div>
+                                <div class="amigo-update-card">
+                                    <img src="https://via.placeholder.com/60" alt="Card Image">
+                                    <div class="card-info">
+                                        <span class="card-title">The Office</span>
+                                        <span class="card-desc">Foi o que ela disse.</span>
+                                        <div class="card-stars">⭐⭐⭐⭐⭐</div>
+                                    </div>
+                                    <div class="card-data"><span>10</span><span>05</span><span>25</span></div>
+                                </div>
+                            </div>
+                            <div class="amigo-update-item">
+                                <div class="amigo-avatar puffle-branco"></div>
+                                <div class="amigo-update-card">
+                                    <img src="https://via.placeholder.com/60" alt="Card Image">
+                                    <div class="card-info">
+                                        <span class="card-title">New Jeans</span>
+                                        <span class="card-desc">So fresh so clean...</span>
+                                        <div class="card-stars">⭐⭐⭐⭐⭐</div>
+                                    </div>
+                                    <div class="card-data"><span>13</span><span>06</span><span>25</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="tela-configuracoes" class="escondido">
+                        <h2 class="config-title"><span class="icon-config">⚙️</span> CONFIGURAÇÕES</h2>
+                        
+                        <div class="config-item">
+                            <span class="config-label">Modo Escuro</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-dark-mode">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div class="config-item"><span class="config-label">Favoritos ⭐</span></div>
+
+                        <div class="config-item"><button class="btn-config-outline">Ordenar Catálogos</button></div>
+
+                        <div class="config-item">
+                            <span class="config-label">Privacidade da conta:</span>
+                            <label class="privacy-toggle">
+                                <input type="checkbox" id="toggle-privacy">
+                                <div class="privacy-button">
+                                    <span class="icon-lock">🔒</span>
+                                    <span class="privacy-text">PRIVADO</span>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <hr class="config-divider">
+
+                        <div class="config-item danger-zone">
+                            <button class="btn-config-danger" id="btn-abrir-modal-apagar">Apagar Conta</button>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </section>
+
+    <input type="file" id="input-foto-perfil" class="escondido" accept="image/*">
+
+    <!-- ======== MODAL EDITAR PERFIL ======== -->
+    <div id="modal-editar-perfil" class="modal-overlay escondido">
+        <div class="modal-content">
+            <button id="btn-fechar-modal" class="btn-fechar-modal">X</button>
+            <div class="auth-form-container modal-form">
+                <h2>Atualizar Dados</h2>
+                <p>Deixe em branco os campos que não quer alterar.</p>
+                
+                <div class="input-group"><label for="edit-nome">Nome</label><input type="text" id="edit-nome" placeholder="Letícia #001"></div>
+                <div class="input-group"><label for="edit-email">E-mail</label><input type="email" id="edit-email" placeholder="email.atual@dominio.com"></div>
+                <div class="input-group"><label for="edit-nascimento">Data de Nascimento</label><input type="text" id="edit-nascimento" placeholder="00/00/0000"></div>
+                <div class="input-group"><label for="edit-bio">Bio</label><input type="text" id="edit-bio" placeholder="Essa é a minha Bio :D"></div>
+                <div class="input-group"><label for="edit-senha">Nova Senha</label><input type="password" id="edit-senha" placeholder="********"></div>
+                <div class="input-group"><label for="edit-confirma-senha">Confirmar Senha</label><input type="password" id="edit-confirma-senha" placeholder="********"></div>
+                
+                <button type="button" class="btn-auth" id="btn-salvar-dados">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== MODAL APAGAR CONTA ======== -->
+    <div id="modal-apagar-conta" class="modal-overlay escondido">
+        <div class="modal-content">
+            <button id="btn-fechar-modal-apagar" class="btn-fechar-modal">X</button>
+            <div class="modal-body-center">
+                <h2>Apagar Conta</h2>
+                <p>Tem certeza que quer apagar sua conta? Esta ação não pode ser desfeita.</p>
+                <button class="btn-auth btn-danger" id="btn-confirmar-apagar">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======== LINK PARA JAVASCRIPT ======== -->
+    <script src="script.js"></script>
+</body>
+</html>

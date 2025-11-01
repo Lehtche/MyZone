@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: MyZone
+  
+  # Configuração do banco de dados MySQL
+  datasource:
+    url: jdbc:mysql://localhost:3306/myzone_db?createDatabaseIfNotExist=true
+    username: root
+    password: QWERqwer132
+    
+  jpa:
+    properties:
+      hibernate:
+        # Isso diz ao Hibernate como "falar" o dialeto SQL do MySQL
+        dialect: org.hibernate.dialect.MySQLDialect
+    
+    # Isso faz o Hibernate criar/atualizar as tabelas no banco
+    # baseado nas suas classes @Entity
+    hibernate:
+      ddl-auto: update
+    # (Opcional) Mostra o SQL no console, ótimo para debug
+    show-sql: true
