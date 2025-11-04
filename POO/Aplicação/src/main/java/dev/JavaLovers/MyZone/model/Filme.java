@@ -9,6 +9,8 @@ public class Filme extends Midia {
     private String diretor;
     private int anoLancamento;
 
+    public Filme() {};
+
     public Filme(String nome, Usuario cadastradoPor, String diretor, int anoLancamento) {
         super(nome, cadastradoPor);
         this.diretor = diretor;

@@ -9,6 +9,8 @@ public class Musica extends Midia {
     private String artista;
     private String genero;
 
+    public Musica() {};
+
     public Musica(String nome, Usuario cadastradoPor, String artista, String genero) {
         super(nome, cadastradoPor);
         this.artista = artista;

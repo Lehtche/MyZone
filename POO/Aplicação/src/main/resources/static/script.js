@@ -179,19 +179,59 @@ window.addEventListener('DOMContentLoaded', () => {
     btnEntrarApp.addEventListener('click', () => {
         const email = document.getElementById('login-email').value;
         const senha = document.getElementById('login-senha').value;
-
+    
         if (email === "" || senha === "") {
             alert('Por favor, digite seu e-mail e senha.');
             return;
         }
+    
+        // 1. Criar o objeto DTO para enviar
+        const dadosLogin = {
+            email: email,
+            senha: senha
+        };
+    
+        // 2. Chamar a API de Login
+        fetch('/api/usuarios/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dadosLogin)
+        })
+        .then(response => {
+            if (response.status === 401) { // Unauthorized
+                throw new Error('E-mail ou senha inválidos.');
+            }
+            if (!response.ok) {
+                throw new Error('Erro ao tentar fazer login.');
+            }
+            return response.json(); // Pega os dados do usuário
+        })
+        .then(usuarioLogado => {
+            // 3. SUCESSO!
+            alert('Login bem-sucedido! Bem-vindo(a), ' + usuarioLogado.nome);
         
-        // (Lógica de FETCH para LOGIN virá aqui no futuro)
-        alert('Lógica de login ainda não implementada. Entrando... (Fictício)');
-
-        // Por enquanto, apenas troca de tela
-        telaLogin.classList.add('escondido');
-        telaCadastro.classList.add('escondido');
-        telaApp.classList.remove('escondido');
+            // (No futuro, você vai salvar o Token JWT aqui)
+        
+            // Limpa os campos de login
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-senha').value = '';
+        
+            // 4. Troca de tela
+            telaLogin.classList.add('escondido');
+            telaCadastro.classList.add('escondido');
+            telaApp.classList.remove('escondido');
+        
+            // (BÔNUS: Popular os dados do usuário na tela principal)
+            document.querySelector('.profile-user-info').textContent = usuarioLogado.nome;
+            // (Você pode adicionar um campo 'bio' no Usuario.java e popular aqui também)
+            // document.querySelector('.profile-bio-box').textContent = usuarioLogado.bio;
+        })
+        .catch(error => {
+            // 5. FALHA
+            alert(error.message);
+        });
     });
     
     

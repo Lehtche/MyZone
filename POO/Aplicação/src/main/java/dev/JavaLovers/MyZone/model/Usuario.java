@@ -19,6 +19,8 @@ public class Usuario {
     private String senha;
     private LocalDate dataNascimento;
 
+    public Usuario() {};
+
     public Usuario(Long id, String nome, String email, String senha, LocalDate dataNascimento) {
         this.id = id;
         this.nome = nome;

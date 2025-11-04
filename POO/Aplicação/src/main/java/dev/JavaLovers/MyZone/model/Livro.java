@@ -9,6 +9,8 @@ public class Livro extends Midia {
     private String autor;
     private String genero;
 
+    public Livro() {};
+
     public Livro(String nome, Usuario cadastradoPor, String autor, String genero) {
         super(nome, cadastradoPor);
         this.autor = autor;
