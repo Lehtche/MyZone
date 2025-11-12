@@ -1,18 +1,25 @@
 package dev.JavaLovers.MyZone.controller;
 
-import dev.JavaLovers.MyZone.dto.LoginRequestDTO; // <-- Importar DTO
+import dev.JavaLovers.MyZone.dto.LoginRequestDTO;
+import dev.JavaLovers.MyZone.dto.UsuarioResponseDTO; // <-- IMPORTAR NOVO DTO
 import dev.JavaLovers.MyZone.model.Usuario;
-// import dev.JavaLovers.MyZone.repository.UsuarioRepository; // <-- NÃO PRECISA MAIS
-import dev.JavaLovers.MyZone.service.UsuarioService; // <-- IMPORTAR SERVICE
+import dev.JavaLovers.MyZone.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity; // <-- Importar
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+// Imports para criar a sessão
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
-    // --- MUDANÇA: Injetar o Service ---
     private final UsuarioService usuarioService;
 
     @Autowired
@@ -20,30 +27,57 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
-    // --- MUDANÇA: Endpoint de Cadastro chama o Service ---
+    // --- ATUALIZADO: Retorna o DTO seguro ---
     @PostMapping("/cadastro")
-    public ResponseEntity<Usuario> cadastrarUsuario(@RequestBody Usuario novoUsuario) {
+    public ResponseEntity<UsuarioResponseDTO> cadastrarUsuario(@RequestBody Usuario novoUsuario) {
         try {
             Usuario usuarioSalvo = usuarioService.cadastrar(novoUsuario);
-            return ResponseEntity.ok(usuarioSalvo); // Retorna 200 OK
+            // Converte para o DTO de resposta
+            UsuarioResponseDTO responseDto = new UsuarioResponseDTO(
+                usuarioSalvo.getId(),
+                usuarioSalvo.getNome(),
+                usuarioSalvo.getEmail(),
+                usuarioSalvo.getDataNascimento()
+            );
+            return ResponseEntity.ok(responseDto);
         } catch (Exception e) {
-            // (Ex: se o email já existir)
-            return ResponseEntity.badRequest().body(null); // Retorna 400
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    // --- NOVO: Endpoint de Login ---
+    // --- ATUALIZADO: Cria a sessão de login ---
     @PostMapping("/login")
-    public ResponseEntity<Usuario> login(@RequestBody LoginRequestDTO loginDTO) {
+    public ResponseEntity<UsuarioResponseDTO> login(@RequestBody LoginRequestDTO loginDTO, HttpServletRequest request) {
         try {
             Usuario usuario = usuarioService.login(loginDTO.getEmail(), loginDTO.getSenha());
+
+            // --- A MÁGICA ACONTECE AQUI ---
+            // 1. Cria a autenticação
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                usuario.getEmail(), // O 'principal' (geralmente o email)
+                null,               // Credenciais (a senha já foi verificada)
+                new ArrayList<>()   // Autoridades (roles), pode deixar vazio por enquanto
+            );
+
+            // 2. Coloca o usuário no contexto de segurança do Spring
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // 3. Cria a sessão HTTP (que gera o cookie JSESSIONID)
+            HttpSession session = request.getSession(true);
+            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+            // --- FIM DA MÁGICA ---
+
+            // Converte para o DTO de resposta
+            UsuarioResponseDTO responseDto = new UsuarioResponseDTO(
+                usuario.getId(),
+                usuario.getNome(),
+                usuario.getEmail(),
+                usuario.getDataNascimento()
+            );
             
-            // Retorna 200 OK com os dados do usuário (sem a senha, idealmente)
-            // (No futuro, você retornará um Token JWT aqui)
-            return ResponseEntity.ok(usuario); 
+            return ResponseEntity.ok(responseDto); 
         
         } catch (Exception e) {
-            // Se o service der erro (senha/email errados)
             return ResponseEntity.status(401).build(); // 401 Unauthorized
         }
     }

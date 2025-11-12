@@ -1,6 +1,12 @@
 // ESPERA O HTML CARREGAR ANTES DE EXECUTAR QUALQUER COISA
 window.addEventListener('DOMContentLoaded', () => {
 
+    // (Omitindo a Seção 1 (PEGAR ELEMENTOS) e Seção 2 (HELPERS)
+    // Elas estão corretas como no seu arquivo anterior)
+
+    // --- Variável Global para guardar o tipo de mídia selecionado ---
+    let tipoMidiaAtual = null;
+
     // ===============================================
     // --- 1. PEGAR TODOS OS ELEMENTOS
     // ===============================================
@@ -81,15 +87,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 2. FUNÇÕES DE AJUDA (Helpers)
     // ===============================================
     
-    /**
-     * Converte uma data de "DD/MM/AAAA" para "AAAA-MM-DD".
-     * Retorna null se o formato for inválido.
-     */
     function formatarDataParaAPI(data) {
         const partes = data.split('/');
-        if (partes.length !== 3 || partes[2].length < 4) {
-            return null; // Formato inválido
-        }
+        if (partes.length !== 3 || partes[2].length < 4) { return null; }
         return `${partes[2]}-${partes[1]}-${partes[0]}`;
     }
 
@@ -105,7 +105,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- Máscara de Data (DD/MM/AAAA)
     if(cadNascimentoInput) {
         cadNascimentoInput.addEventListener('input', (e) => {
-            let valor = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número
+            let valor = e.target.value.replace(/\D/g, ''); 
             if (valor.length > 4) {
                 valor = valor.slice(0, 2) + '/' + valor.slice(2, 4) + '/' + valor.slice(4, 8);
             } else if (valor.length > 2) {
@@ -124,17 +124,14 @@ window.addEventListener('DOMContentLoaded', () => {
         const dataNascimentoInput = cadNascimentoInput.value;
 
         if (!email || !nome || !senha || !senhaConfirmacao || !dataNascimentoInput) {
-            alert("Por favor, preencha todos os campos.");
-            return;
+            alert("Por favor, preencha todos os campos."); return;
         }
         if (senha !== senhaConfirmacao) {
-            alert("As senhas não conferem!");
-            return;
+            alert("As senhas não conferem!"); return;
         }
         const dataNascimentoFormatada = formatarDataParaAPI(dataNascimentoInput);
         if (!dataNascimentoFormatada) {
-            alert("Formato de data inválido. Por favor, use DD/MM/AAAA.");
-            return;
+            alert("Formato de data inválido. Por favor, use DD/MM/AAAA."); return;
         }
 
         const dadosCadastro = {
@@ -146,6 +143,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         fetch('/api/usuarios/cadastro', {
             method: 'POST',
+            credentials: 'include', // <-- 1. ADICIONADO PARA ENVIAR CREDENCIAIS
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dadosCadastro)
         })
@@ -186,6 +184,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
         fetch('/api/usuarios/login', {
             method: 'POST',
+            credentials: 'include', // <-- 2. ADICIONADO PARA CRIAR A SESSÃO
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dadosLogin)
         })
@@ -204,12 +203,8 @@ window.addEventListener('DOMContentLoaded', () => {
             telaCadastro.classList.add('escondido');
             telaApp.classList.remove('escondido');
         
-            // Atualiza a tela principal com os dados do usuário
             document.querySelector('.profile-user-info').textContent = usuarioLogado.nome;
-            // (Você pode adicionar um campo 'bio' no Usuario.java e popular aqui também)
-            // document.querySelector('.profile-bio-box').textContent = usuarioLogado.bio || 'Essa é a minha Bio :D';
             
-            // Garante que a tela principal (atualizações do usuário) seja a visível
             esconderTelasApp();
             telaAtualizacoes.classList.remove('escondido');
         })
@@ -232,21 +227,18 @@ window.addEventListener('DOMContentLoaded', () => {
             telaAtualizacoes.classList.remove('escondido');
         });
     }
-
     if(btnLogoHome) {
         btnLogoHome.addEventListener('click', () => {
             esconderTelasApp();
             telaAtualizacoesAmigos.classList.remove('escondido');
         });
     }
-
     if(btnAbrirConfig) {
         btnAbrirConfig.addEventListener('click', () => {
             esconderTelasApp();
             telaConfiguracoes.classList.remove('escondido');
         });
     }
-
     if(btnAbrirPedidos) {
         btnAbrirPedidos.addEventListener('click', (e) => {
             e.stopPropagation(); 
@@ -269,12 +261,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     
     document.addEventListener('click', (e) => {
-        // Fecha o popup de amizade se clicar fora dele
         if(popupPedidosAmizade && !popupPedidosAmizade.contains(e.target) && e.target !== btnAbrirPedidos) {
             popupPedidosAmizade.classList.add('escondido');
         }
-
-        // Fecha o menu de perfil se clicar em qualquer outro lugar
         if(menuPerfil && !menuPerfil.contains(e.target) && e.target !== btnMenuPerfil) {
              menuPerfil.classList.add('escondido'); 
         }
@@ -365,12 +354,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     botoesTipoMidia.forEach(botao => {
         botao.addEventListener('click', () => {
-            const tipo = botao.dataset.tipo;
-            if (tipo === 'nova') {
+            tipoMidiaAtual = botao.dataset.tipo; // <-- Salva o tipo (ex: "filme")
+            if (tipoMidiaAtual === 'nova') {
                 alert('Função "Nova Categoria" não implementada.');
                 return;
             }
-            abrirModalAddMidia(tipo, botao.textContent.trim());
+            abrirModalAddMidia(tipoMidiaAtual, botao.textContent.trim());
         });
     });
 
@@ -410,16 +399,62 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- API: Botão SALVAR MÍDIA (Lógica NOVA) ---
     if(btnSalvarMidia) {
         btnSalvarMidia.addEventListener('click', () => {
-            // (Aqui entrará o FETCH para salvar a mídia no futuro)
+            
+            const url = `/api/midias/${tipoMidiaAtual}`; // ex: /api/midias/filme
+            let payload = {};
+
             const nome = document.getElementById('midia-nome').value;
+            const nota = parseInt(midiaNotaInput.value, 10);
+            const comentario = document.getElementById('midia-comentarios').value;
+
             if (nome === "") {
                 alert('O campo "Nome" é obrigatório!');
                 return;
             }
-            alert('Mídia salva com sucesso! (Fictício)');
-            modalAddMidia.classList.add('escondido');
+
+            payload.nome = nome;
+            payload.nota = nota;
+            payload.comentario = comentario;
+
+            if (tipoMidiaAtual === 'filme') {
+                payload.diretor = document.getElementById('midia-diretor').value;
+                payload.anoLancamento = parseInt(document.getElementById('midia-duracao-filme').value, 10) || 0;
+            } else if (tipoMidiaAtual === 'serie') {
+                payload.temporadas = parseInt(document.getElementById('midia-temporadas').value, 10) || 0;
+            } else if (tipoMidiaAtual === 'musica') {
+                payload.artista = document.getElementById('midia-artista').value;
+            } else if (tipoMidiaAtual === 'livro') {
+                payload.autor = document.getElementById('midia-autor').value;
+            }
+
+            // Envia o DTO para o back-end
+            fetch(url, {
+                method: 'POST',
+                credentials: 'include', // <-- 3. ADICIONADO PARA ENVIAR A SESSÃO
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Erro de autenticação. Faça login novamente.');
+                }
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar a mídia.');
+                }
+                return response.json();
+            })
+            .then(midiaSalva => {
+                alert('Mídia salva com sucesso! ID: ' + midiaSalva.id);
+                modalAddMidia.classList.add('escondido');
+                // (Aqui você pode adicionar a lógica para atualizar o feed na tela)
+            })
+            .catch(error => {
+                console.error(error);
+                alert(error.message);
+            });
         });
     }
 
