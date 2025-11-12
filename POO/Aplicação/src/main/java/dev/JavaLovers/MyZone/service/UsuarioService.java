@@ -1,12 +1,12 @@
 package dev.JavaLovers.MyZone.service;
 
-import dev.JavaLovers.MyZone.model.Usuario;
-import dev.JavaLovers.MyZone.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.Optional;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import dev.JavaLovers.MyZone.model.Usuario;
+import dev.JavaLovers.MyZone.repository.UsuarioRepository;
 
 @Service
 public class UsuarioService {
@@ -14,7 +14,6 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
     public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;

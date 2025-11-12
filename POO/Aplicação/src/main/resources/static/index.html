@@ -9,13 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
 
-    <!-- ======== TELA LOGIN ======== -->
     <section id="tela-login" class="tela-container auth-page">
         <div class="auth-wrapper">
+            
             <div class="auth-logo">
                 <h1 class="logo-text">My</h1>
                 <h1 class="logo-text">Zone</h1>
@@ -47,12 +47,13 @@
                 <span>🎥</span>
                 <span>📷</span>
             </div>
+
         </div>
     </section>
 
-    <!-- ======== TELA CADASTRO ======== -->
     <section id="tela-cadastro" class="tela-container auth-page escondido">
         <div class="auth-wrapper">
+
             <div class="auth-form-container">
                 <h2>Faça seu cadastro:</h2>
                 
@@ -90,27 +91,56 @@
                 <h1 class="logo-text">Zone</h1>
                 <span>⭐</span>
             </div>
+
         </div>
     </section>
 
-    <!-- ======== TELA APP ======== -->
     <section id="tela-app" class="tela-container escondido">
+        
         <div class="window-frame">
-            <header class="header-bar shiny-box">
-                <div class="logo" id="btn-voltar-home">My Zone</div>
+
+            <header class="header-bar">
+                
+                <div class="header-left-items">
+                    <div class="logo" id="btn-logo-home">My Zone</div>
+                    
+                    <img src="https://i.imgur.com/4z1ZJ8H.png" alt="Avatar" class="header-avatar" id="btn-avatar-home">
+                    
+                    <div class="header-icon-container">
+                        <span id="btn-abrir-pedidos" class="header-icon-btn icon-amigos">👤</span>
+                        <div class="notification-badge">1</div>
+                    </div>
+                </div>
+            
                 <div class="search-bar">
                     <input type="text" placeholder="Pesquisar">
+                    <span class="search-icon">🔍</span>
                 </div>
-                <div class="header-icons">
-                    <span>🔔</span>
-                    <span id="btn-abrir-amigos" class="header-icon-btn">👤</span>
-                    <span id="btn-abrir-config" class="header-icon-btn">⚙️</span>
+            
+                <div class="header-right-items">
+                    <span id="btn-abrir-config" class="header-icon-btn icon-config">⚙️</span>
                 </div>
+            
             </header>
+            <div id="popup-pedidos-amizade" class="pedido-popup escondido">
+                <div class="pedido-window">
+                    <div class="pedido-title-bar"><span>PEDIDOS DE AMIZADE</span><div class="pedido-title-dot"></div></div>
+                    <div class="pedido-content">
+                        <div class="pedido-avatar"><img src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/132.png" alt="Ditto"></div>
+                        <h3 class="pedido-username">DITTO #132</h3>
+                        <div class="pedido-botoes">
+                            <button class="btn-pedido btn-aceitar" id="btn-aceitar-amigo">Aceitar</button>
+                            <button class="btn-pedido btn-recusar" id="btn-recusar-amigo">Recusar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="main-content">
+
                 <aside class="sidebar">
                     <div class="profile-card shiny-box">
+                    
                         <button class="btn-menu-perfil" id="btn-menu-perfil">...</button>
                         
                         <div id="menu-perfil" class="menu-perfil escondido">
@@ -120,63 +150,151 @@
                             </ul>
                         </div>
                         
-                        <div class="profile-pic-bg"></div>
+                        <div class="profile-pic-bg" style="background-image: url('https://i.imgur.com/I5b6nJg.png');">
+                        </div>
                         <div class="profile-user-info">
                             Letícia #001 <span class="status-dot"></span>
                         </div>
-                        <div class="profile-bio-box">Essa é a minha Bio :D</div>
+                        <div class="profile-bio-box">
+                            Essa é a minha Bio :D
+                        </div>
                     </div>
                 </aside>
-
                 <main class="feed">
+                
                     <section id="tela-atualizacoes">
-                        <h2>Atualizações Recentes</h2>
-                        <div class="updates-container">
-                            <div class="update-card">...</div>
-                            <div class="update-card">...</div>
+                        <div class="feed-header">
+                          <h2>Atualizações Recentes</h2>
+                          <button id="btn-abrir-tipo-midia" class="btn-add-midia-plus">+</button>
                         </div>
+    
+                        <div class="updates-grid">
+                            <div class="update-card-item">
+                                <img src="https://i.imgur.com/mSjI4qH.jpg" alt="Severance" class="update-card-image">
+                                <div class="update-card-info">
+                                    <span class="update-card-title">Severance</span>
+                                    <span class="update-card-desc">Muito bom! Maratonei em uma semana.</span>
+                                    <div class="update-card-stars">★★★★★</div>
+                                </div>
+                                <div class="update-card-date">
+                                    <span>10</span><span>05</span><span>25</span>
+                                </div>
+                            </div>
+                            
+                            <div class="update-card-item">
+                                <img src="https://i.imgur.com/i4aYfVn.jpg" alt="New Jeans" class="update-card-image">
+                                <div class="update-card-info">
+                                    <span class="update-card-title">New Jeans</span>
+                                    <span class="update-card-desc">So fresh so clean...</span>
+                                    <div class="update-card-stars">★★★★★</div>
+                                </div>
+                                <div class="update-card-date">
+                                    <span>13</span><span>06</span><span>25</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="category-header">
+                            <span>SERIES</span>
+                            <span>...</span>
+                        </div>
+                        <div class="category-header">
+                            <span>FILMES</span>
+                            <span>...</span>
+                        </div>
+                        <div class="category-header">
+                            <span>MÚSICAS</span>
+                            <span>...</span>
+                        </div>
+                        <div class="category-header">
+                            <span>ANIMES</span>
+                            <span>...</span>
+                        </div>
+
+                        <h2 class="feed-subtitle">Amigos</h2>
+                        <div class="friend-puffle-list">
+                            <div class="puffle-avatar puffle-grey"><div class="puffle-status-dot"></div></div>
+                            <div class="puffle-avatar puffle-brown"></div>
+                            <div class="puffle-avatar puffle-blue"></div>
+                            <div class="puffle-avatar puffle-purple"></div>
+                            <div class="puffle-avatar puffle-white"></div>
+                            <div class="puffle-avatar puffle-yellow"><div class="puffle-status-dot"></div></div>
+                        </div>
+
                     </section>
                     
-                    <section id="tela-amigos" class="escondido">
-                        <h2>Amigos</h2>
-                        <div class="friends-list">
-                            <div class="friend-icon"></div>
-                            <div class="friend-icon"></div>
-                        </div>
-                    </section>
-
                     <section id="tela-atualizacoes-amigos" class="escondido">
                         <h2>Atualizações de Amigos</h2>
-                        <div class="amigos-grid">
-                            <div class="amigo-update-item">
-                                <div class="amigo-avatar puffle-rosa"></div>
-                                <div class="amigo-update-card">
-                                    <img src="https://via.placeholder.com/60" alt="Card Image">
-                                    <div class="card-info">
-                                        <span class="card-title">The Office</span>
-                                        <span class="card-desc">Foi o que ela disse.</span>
-                                        <div class="card-stars">⭐⭐⭐⭐⭐</div>
+
+                        <div class="friend-updates-grid">
+                            
+                            <div class="friend-update-row">
+                                <div class="puffle-avatar puffle-pink"></div>
+                                <div class="update-card-item">
+                                    <img src="https://i.imgur.com/L2k1Nqg.jpg" alt="The Office" class="update-card-image">
+                                    <div class="update-card-info">
+                                        <span class="update-card-title">The Office</span>
+                                        <span class="update-card-desc">Foi o que ela disse.</span>
+                                        <div class="update-card-stars">★★★★★</div>
                                     </div>
-                                    <div class="card-data"><span>10</span><span>05</span><span>25</span></div>
+                                    <div class="update-card-date">
+                                        <span>10</span><span>05</span><span>25</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="amigo-update-item">
-                                <div class="amigo-avatar puffle-branco"></div>
-                                <div class="amigo-update-card">
-                                    <img src="https://via.placeholder.com/60" alt="Card Image">
-                                    <div class="card-info">
-                                        <span class="card-title">New Jeans</span>
-                                        <span class="card-desc">So fresh so clean...</span>
-                                        <div class="card-stars">⭐⭐⭐⭐⭐</div>
+
+                            <div class="friend-update-row">
+                                <div class="puffle-avatar puffle-brown"><div class="puffle-status-dot"></div></div>
+                                <div class="update-card-item">
+                                    <img src="https://i.imgur.com/xqcT8xP.jpg" alt="Sugar" class="update-card-image">
+                                    <div class="update-card-info">
+                                        <span class="update-card-title">Sugar</span>
+                                        <span class="update-card-desc">NO LIGHTS? NO MUSIC?</span>
+                                        <div class="update-card-stars">★★★★☆</div>
                                     </div>
-                                    <div class="card-data"><span>13</span><span>06</span><span>25</span></div>
+                                    <div class="update-card-date">
+                                        <span>13</span><span>06</span><span>25</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            <div class="friend-update-row">
+                                <div class="puffle-avatar puffle-blue"></div>
+                                <div class="update-card-item">
+                                    <img src="https://i.imgur.com/J3vA9Zc.jpg" alt="Breaking Bad" class="update-card-image">
+                                    <div class="update-card-info">
+                                        <span class="update-card-title">Breaking Bad</span>
+                                        <span class="update-card-desc">proerd é um programa...</span>
+                                        <div class="update-card-stars">★★★★★</div>
+                                    </div>
+                                    <div class="update-card-date">
+                                        <span>10</span><span>05</span><span>25</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="friend-update-row">
+                                <div class="puffle-avatar puffle-grey"><div class="puffle-status-dot"></div></div>
+                                <div class="update-card-item">
+                                    <img src="https://i.imgur.com/Bv6vA4n.jpg" alt="Like Him" class="update-card-image">
+                                    <div class="update-card-info">
+                                        <span class="update-card-title">Like Him</span>
+                                        <span class="update-card-desc">Do I look like him?</span>
+                                        <div class="update-card-stars">★★★★★</div>
+                                    </div>
+                                    <div class="update-card-date">
+                                        <span>13</span><span>06</span><span>25</span>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </section>
 
                     <section id="tela-configuracoes" class="escondido">
-                        <h2 class="config-title"><span class="icon-config">⚙️</span> CONFIGURAÇÕES</h2>
+                        <h2 class="config-title">
+                            <span class="icon-config">⚙️</span> CONFIGURAÇÕES
+                        </h2>
                         
                         <div class="config-item">
                             <span class="config-label">Modo Escuro</span>
@@ -186,9 +304,13 @@
                             </label>
                         </div>
 
-                        <div class="config-item"><span class="config-label">Favoritos ⭐</span></div>
+                        <div class="config-item">
+                            <span class="config-label">Favoritos ⭐</span>
+                        </div>
 
-                        <div class="config-item"><button class="btn-config-outline">Ordenar Catálogos</button></div>
+                        <div class="config-item">
+                            <button class="btn-config-outline">Ordenar Catálogos</button>
+                        </div>
 
                         <div class="config-item">
                             <span class="config-label">Privacidade da conta:</span>
@@ -204,17 +326,19 @@
                         <hr class="config-divider">
 
                         <div class="config-item danger-zone">
-                            <button class="btn-config-danger" id="btn-abrir-modal-apagar">Apagar Conta</button>
+                            <button class="btn-config-danger" id="btn-abrir-modal-apagar">
+                                Apagar Conta
+                            </button>
                         </div>
                     </section>
-                </main>
-            </div>
-        </div>
-    </section>
-
+                    
+                </main> 
+                </div> 
+        </div> 
+    </section> 
+    
     <input type="file" id="input-foto-perfil" class="escondido" accept="image/*">
 
-    <!-- ======== MODAL EDITAR PERFIL ======== -->
     <div id="modal-editar-perfil" class="modal-overlay escondido">
         <div class="modal-content">
             <button id="btn-fechar-modal" class="btn-fechar-modal">X</button>
@@ -222,19 +346,36 @@
                 <h2>Atualizar Dados</h2>
                 <p>Deixe em branco os campos que não quer alterar.</p>
                 
-                <div class="input-group"><label for="edit-nome">Nome</label><input type="text" id="edit-nome" placeholder="Letícia #001"></div>
-                <div class="input-group"><label for="edit-email">E-mail</label><input type="email" id="edit-email" placeholder="email.atual@dominio.com"></div>
-                <div class="input-group"><label for="edit-nascimento">Data de Nascimento</label><input type="text" id="edit-nascimento" placeholder="00/00/0000"></div>
-                <div class="input-group"><label for="edit-bio">Bio</label><input type="text" id="edit-bio" placeholder="Essa é a minha Bio :D"></div>
-                <div class="input-group"><label for="edit-senha">Nova Senha</label><input type="password" id="edit-senha" placeholder="********"></div>
-                <div class="input-group"><label for="edit-confirma-senha">Confirmar Senha</label><input type="password" id="edit-confirma-senha" placeholder="********"></div>
+                <div class="input-group">
+                    <label for="edit-nome">Nome</label>
+                    <input type="text" id="edit-nome" placeholder="Letícia #001">
+                </div>
+                <div class="input-group">
+                    <label for="edit-email">E-mail</label>
+                    <input type="email" id="edit-email" placeholder="email.atual@dominio.com">
+                </div>
+                <div class="input-group">
+                    <label for="edit-nascimento">Data de Nascimento</label>
+                    <input type="text" id="edit-nascimento" placeholder="00/00/0000">
+                </div>
+                <div class="input-group">
+                    <label for="edit-bio">Bio</label>
+                    <input type="text" id="edit-bio" placeholder="Essa é a minha Bio :D">
+                </div>
+                <div class="input-group">
+                    <label for="edit-senha">Nova Senha</label>
+                    <input type="password" id="edit-senha" placeholder="********">
+                </div>
+                <div class="input-group">
+                    <label for="edit-confirma-senha">Confirmar Senha</label>
+                    <input type="password" id="edit-confirma-senha" placeholder="********">
+                </div>
                 
                 <button type="button" class="btn-auth" id="btn-salvar-dados">Salvar Alterações</button>
             </div>
         </div>
     </div>
 
-    <!-- ======== MODAL APAGAR CONTA ======== -->
     <div id="modal-apagar-conta" class="modal-overlay escondido">
         <div class="modal-content">
             <button id="btn-fechar-modal-apagar" class="btn-fechar-modal">X</button>
@@ -246,7 +387,96 @@
         </div>
     </div>
 
-    <!-- ======== LINK PARA JAVASCRIPT ======== -->
+    <div id="modal-tipo-midia" class="modal-overlay escondido">
+        <div class="tipo-midia-window"> <div class="tipo-midia-header-bar"> <span>Tipo de Mídia</span>
+                <button id="btn-fechar-tipo-midia" class="btn-fechar-popup"></button> </div>
+            <div class="tipo-midia-content"> <button class="btn-tipo-midia" data-tipo="filme">Filmes</button>
+                <button class="btn-tipo-midia" data-tipo="serie">Series</button>
+                <button class="btn-tipo-midia" data-tipo="musica">Música</button>
+                <button class="btn-tipo-midia" data-tipo="livro">Animes/Livros</button> 
+                <button class="btn-tipo-midia nova-categoria-btn" data-tipo="nova">Nova categoria</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-midia" class="modal-overlay escondido">
+        <div class="add-midia-window"> <div class="add-midia-header-bar"> <span id="add-midia-title">🎵 Nova música</span>
+                <button id="btn-fechar-add-midia" class="btn-fechar-popup"></button> </div>
+            <div class="add-midia-content"> <form class="add-midia-form">
+                    <div class="form-main">
+                        <div class="form-fields">
+                            
+                            <div class="form-group campo-comum">
+                                <label for="midia-nome">Nome:</label>
+                                <input type="text" id="midia-nome">
+                            </div>
+    
+                            <div class="form-group" data-tipo="musica">
+                                <label for="midia-artista">Artista:</label>
+                                <input type="text" id="midia-artista">
+                            </div>
+                            <div class="form-group" data-tipo="musica">
+                                <label for="midia-album">Álbum:</label>
+                                <input type="text" id="midia-album">
+                            </div>
+                            <div class="form-group" data-tipo="musica">
+                                <label for="midia-data-estreia">Data de estreia:</label>
+                                <input type="text" id="midia-data-estreia" placeholder="DD/MM/AAAA">
+                            </div>
+                            
+                            <div class="form-group" data-tipo="filme">
+                                <label for="midia-diretor">Diretor:</label>
+                                <input type="text" id="midia-diretor">
+                            </div>
+                            <div class="form-group" data-tipo="filme">
+                                <label for="midia-duracao-filme">Duração (min):</label>
+                                <input type="number" id="midia-duracao-filme">
+                            </div>
+    
+                            <div class="form-group" data-tipo="serie">
+                                <label for="midia-temporadas">Temporadas:</label>
+                                <input type="number" id="midia-temporadas">
+                            </div>
+    
+                            <div class="form-group" data-tipo="livro">
+                                <label for="midia-autor">Autor/Estúdio:</label>
+                                <input type="text" id="midia-autor">
+                            </div>
+                            <div class="form-group" data-tipo="livro">
+                                <label for="midia-paginas">Episódios/Págs:</label>
+                                <input type="number" id="midia-paginas">
+                            </div>
+                        </div>
+                        
+                        <div class="form-image-upload">
+                            <label for="midia-imagem-input" class="upload-box">
+                                <span>Adicionar imagem</span>
+                                <span class="upload-icon">↑</span>
+                            </label>
+                            <input type="file" id="midia-imagem-input" class="escondido">
+                        </div>
+                    </div>
+    
+                    <div class="form-group campo-comum">
+                        <label for="midia-comentarios">Comentários:</label>
+                        <textarea id="midia-comentarios"></textarea>
+                    </div>
+                    <div class="form-group-rating campo-comum">
+                        <label>Avaliação:</label>
+                        <div class="star-rating">
+                            <span class="star" data-value="1">☆</span>
+                            <span class="star" data-value="2">☆</span>
+                            <span class="star" data-value="3">☆</span>
+                            <span class="star" data-value="4">☆</span>
+                            <span class="star" data-value="5">☆</span>
+                        </div>
+                        <input type="hidden" id="midia-nota" value="0">
+                    </div>
+                    <button type="button" class="btn-auth" id="btn-salvar-midia">Salvar Mídia</button>
+                </form>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
