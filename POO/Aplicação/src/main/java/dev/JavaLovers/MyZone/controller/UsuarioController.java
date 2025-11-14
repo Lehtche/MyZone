@@ -4,7 +4,7 @@ import dev.JavaLovers.MyZone.dto.LoginRequestDTO;
 import dev.JavaLovers.MyZone.dto.UsuarioResponseDTO; 
 import dev.JavaLovers.MyZone.model.GrupoUsuario; 
 import dev.JavaLovers.MyZone.model.Usuario;
-import dev.JavaLovers.MyZone.repository.UsuarioRepository; // <-- IMPORTAR
+import dev.JavaLovers.MyZone.repository.UsuarioRepository; 
 import dev.JavaLovers.MyZone.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +18,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
-import java.time.LocalDate; // <-- IMPORTAR
+import java.security.Principal; // <-- IMPORTAR
+import java.time.LocalDate; 
 import java.util.ArrayList;
 import java.util.List; 
+import java.util.Map; // <-- IMPORTAR
 import java.util.stream.Collectors; 
 
 @RestController
@@ -28,12 +30,12 @@ import java.util.stream.Collectors;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
-    private final UsuarioRepository usuarioRepository; // <-- INJETAR REPOSITÓRIO
+    private final UsuarioRepository usuarioRepository; 
 
     @Autowired
-    public UsuarioController(UsuarioService usuarioService, UsuarioRepository usuarioRepository) { // <-- ATUALIZAR
+    public UsuarioController(UsuarioService usuarioService, UsuarioRepository usuarioRepository) { 
         this.usuarioService = usuarioService;
-        this.usuarioRepository = usuarioRepository; // <-- ATUALIZAR
+        this.usuarioRepository = usuarioRepository; 
     }
 
     // --- CADASTRO (sem alteração) ---
@@ -45,7 +47,8 @@ public class UsuarioController {
                 usuarioSalvo.getId(),
                 usuarioSalvo.getNome(),
                 usuarioSalvo.getEmail(),
-                usuarioSalvo.getDataNascimento()
+                usuarioSalvo.getDataNascimento(),
+                null // fotoUrl não é retornada no cadastro
             );
             return ResponseEntity.ok(responseDto);
         } catch (Exception e) {
@@ -53,7 +56,7 @@ public class UsuarioController {
         }
     }
 
-    // --- LOGIN (sem alteração) ---
+    // --- LOGIN (Atualizado para enviar fotoUrl) ---
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponseDTO> login(@RequestBody LoginRequestDTO loginDTO, HttpServletRequest request) {
         try {
@@ -71,11 +74,13 @@ public class UsuarioController {
             HttpSession session = request.getSession(true);
             session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
+            // Envia o DTO completo, incluindo a fotoUrl
             UsuarioResponseDTO responseDto = new UsuarioResponseDTO(
                 usuario.getId(),
                 usuario.getNome(),
                 usuario.getEmail(),
-                usuario.getDataNascimento()
+                usuario.getDataNascimento(),
+                usuario.getFotoUrl() // <-- Envia a URL da foto
             );
             
             return ResponseEntity.ok(responseDto); 
@@ -85,16 +90,35 @@ public class UsuarioController {
         }
     }
 
-    // --- NOVO ENDPOINT PARA DEMONSTRAR A VIEW ---
-    /**
-     * Endpoint para demonstrar o uso da View 'VW_Usuarios_Publicos'.
-     * Retorna uma lista de utilizadores sem dados sensíveis.
-     * Acessível apenas por utilizadores logados.
-     */
+    // --- GET USUARIOS PUBLICOS (sem alteração) ---
     @GetMapping("/publicos")
     public ResponseEntity<List<UsuarioRepository.UsuarioPublicoView>> getUsuariosPublicos() {
-        // Usa o método do repositório que chama a View nativa
         List<UsuarioRepository.UsuarioPublicoView> usuarios = usuarioRepository.findAllPublic();
         return ResponseEntity.ok(usuarios);
+    }
+    
+    // --- NOVO ENDPOINT PARA ATUALIZAR A FOTO ---
+    /**
+     * Atualiza a foto de perfil do utilizador logado.
+     * Recebe um JSON simples: { "fotoUrl": "http://..." }
+     */
+    @PostMapping("/atualizar-foto")
+    public ResponseEntity<Void> atualizarFoto(@RequestBody Map<String, String> payload, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        String fotoUrl = payload.get("fotoUrl");
+        if (fotoUrl == null || fotoUrl.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            // Reutiliza o UsuarioService para esta lógica
+            usuarioService.atualizarFoto(principal.getName(), fotoUrl);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 }

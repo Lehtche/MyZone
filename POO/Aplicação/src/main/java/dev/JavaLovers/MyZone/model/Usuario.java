@@ -24,6 +24,7 @@ public class Usuario {
     private String email;
     private String senha;
     private LocalDate dataNascimento;
+    private String fotoUrl;
 
     /**
      * Relação Muitos-para-Muitos com GrupoUsuario.
@@ -93,6 +94,13 @@ public class Usuario {
 
     public void setDataNascimento(LocalDate dataNascimento) {
         this.dataNascimento = dataNascimento;
+    }
+    public String getFotoUrl() {
+        return fotoUrl;
+    }
+
+    public void setFotoUrl(String fotoUrl) {
+        this.fotoUrl = fotoUrl;
     }
 
     // Getters e Setters para Grupos

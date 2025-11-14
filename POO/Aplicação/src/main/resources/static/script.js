@@ -4,11 +4,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- Variáveis Globais ---
     let tipoMidiaAtual = null;
     let usuarioLogado = null; 
-    let midiaAtualEmDetalhe = null; // Guarda a MÍDIA inteira aberta no modal
-    let idMidiaEmEdicao = null; // Guarda o ID se estivermos editando
+    let midiaAtualEmDetalhe = null; 
+    let idMidiaEmEdicao = null; 
 
     // ===============================================
-    // --- 1. PEGAR TODOS OS ELEMENTOS
+    // --- 1. PEGAR TODOS OS ELEMENTOS (Com Perfil)
     // ===============================================
     const telaLogin = document.getElementById('tela-login');
     const telaCadastro = document.getElementById('tela-cadastro');
@@ -23,11 +23,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const cadConfirmaSenhaInput = document.getElementById('cad-confirma-senha');
     const cadNascimentoInput = document.getElementById('cad-nascimento');
     const btnLogoHome = document.getElementById('btn-logo-home');
-    const btnAvatarHome = document.getElementById('btn-avatar-home');
-    const btnAbrirPedidos = document.getElementById('btn-abrir-pedidos');
     const btnAbrirConfig = document.getElementById('btn-abrir-config');
     const telaAtualizacoes = document.getElementById('tela-atualizacoes');
-    const telaAtualizacoesAmigos = document.getElementById('tela-atualizacoes-amigos');
     const telaConfiguracoes = document.getElementById('tela-configuracoes');
     
     // --- Containers dos Feeds (Por Categoria) ---
@@ -36,17 +33,20 @@ window.addEventListener('DOMContentLoaded', () => {
     const feedMusicaContainer = document.getElementById('feed-musica');
     const feedLivroContainer = document.getElementById('feed-livro');
 
-    const popupPedidosAmizade = document.getElementById('popup-pedidos-amizade');
-    const btnAceitarAmigo = document.getElementById('btn-aceitar-amigo');
-    const btnRecusarAmigo = document.getElementById('btn-recusar-amigo');
+    // --- Elementos de Perfil (REATIVADOS) ---
     const btnMenuPerfil = document.getElementById('btn-menu-perfil');
     const menuPerfil = document.getElementById('menu-perfil');
     const btnAtualizarFoto = document.getElementById('btn-atualizar-foto');
-    const btnAtualizarDados = document.getElementById('btn-atualizar-dados');
-    const inputFotoPerfil = document.getElementById('input-foto-perfil');
     const modalEditarPerfil = document.getElementById('modal-editar-perfil');
-    const btnFecharModal = document.getElementById('btn-fechar-modal');
-    const btnSalvarDados = document.getElementById('btn-salvar-dados');
+    const btnFecharModalFoto = document.getElementById('btn-fechar-modal-foto');
+    const btnSalvarFoto = document.getElementById('btn-salvar-foto');
+    const inputFotoUrl = document.getElementById('edit-foto-url');
+    const headerAvatarImg = document.getElementById('header-avatar-img');
+    const profilePicBg = document.getElementById('profile-pic-bg');
+    const profileUserInfo = document.getElementById('profile-user-info');
+
+
+    // --- Modais Funcionais ---
     const btnAbrirModalApagar = document.getElementById('btn-abrir-modal-apagar');
     const modalApagarConta = document.getElementById('modal-apagar-conta');
     const btnFecharModalApagar = document.getElementById('btn-fechar-modal-apagar');
@@ -84,7 +84,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const modalDetalhesMidia = document.getElementById('modal-detalhes-midia');
     const btnFecharDetalhesMidia = document.getElementById('btn-fechar-detalhes-midia');
     const btnDeletarMidia = document.getElementById('btn-deletar-midia');
-    const btnEditarMidia = document.getElementById('btn-editar-midia'); // <-- NOVO BOTÃO
+    const btnEditarMidia = document.getElementById('btn-editar-midia'); 
     const detalheTitulo = document.getElementById('detalhe-titulo');
     const detalhePoster = document.getElementById('detalhe-poster');
     const detalheSinopse = document.getElementById('detalhe-sinopse');
@@ -103,14 +103,12 @@ window.addEventListener('DOMContentLoaded', () => {
         return `${partes[2]}-${partes[1]}-${partes[0]}`;
     }
 
-    // Formata data do tipo "YYYY-MM-DD" (do Java) para "DD/MM/YYYY" (form)
     function formatarDataParaForm(data) {
         if (!data) return "";
         try {
-            // Adiciona 'T00:00:00' para evitar problemas de fuso horário
             const dataObj = new Date(data + 'T00:00:00'); 
             const dia = String(dataObj.getUTCDate()).padStart(2, '0');
-            const mes = String(dataObj.getUTCMonth() + 1).padStart(2, '0'); // Mês é base 0
+            const mes = String(dataObj.getUTCMonth() + 1).padStart(2, '0');
             const ano = dataObj.getUTCFullYear();
             if (isNaN(dia)) return "";
             return `${dia}/${mes}/${ano}`;
@@ -129,7 +127,20 @@ window.addEventListener('DOMContentLoaded', () => {
         e.target.value = valor;
     }
 
-    // --- Renderiza o feed por categoria ---
+    // --- NOVO: Atualiza a foto de perfil na UI ---
+    function atualizarImagensDePerfil(fotoUrl) {
+        const urlPadraoHeader = "https://i.imgur.com/4z1ZJ8H.png";
+        const urlPadraoFundo = "https://i.imgur.com/I5b6nJg.png";
+        
+        if(headerAvatarImg) {
+            headerAvatarImg.src = fotoUrl || urlPadraoHeader;
+        }
+        if(profilePicBg) {
+            profilePicBg.style.backgroundImage = `url('${fotoUrl || urlPadraoFundo}')`;
+        }
+    }
+
+
     function renderizarMidias(midias, avaliacoes) {
         const containers = {
             FILME: feedFilmeContainer,
@@ -201,7 +212,6 @@ window.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Erro ao carregar feed:", error);
             if(feedFilmeContainer) feedFilmeContainer.innerHTML = `<p style="color: red;">${error.message}</p>`;
-            // Se a sessão expirou, força o logout
             if (error.message.includes("Sessão expirada")) {
                 telaApp.classList.add('escondido');
                 telaLogin.classList.remove('escondido');
@@ -210,7 +220,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function preencherModalDetalhes(midia, avaliacoes) {
-        midiaAtualEmDetalhe = midia; // Salva a mídia inteira
+        midiaAtualEmDetalhe = midia; 
         detalheTitulo.textContent = midia.nome;
         detalhePoster.src = midia.posterUrl || `https://via.placeholder.com/200x300/004a99/FFFFFF?text=${midia.nome}`;
         detalheSinopse.textContent = midia.sinopse || "Esta mídia não tem sinopse.";
@@ -228,13 +238,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
         detalheAvaliacoesLista.innerHTML = '';
         if (avaliacoes.length > 0) {
-            // Ordena para mostrar a avaliação mais recente primeiro
             avaliacoes.sort((a, b) => new Date(b.dataAvaliacao) - new Date(a.dataAvaliacao));
-
             avaliacoes.forEach(av => {
                 const avaliacaoCard = document.createElement('div');
                 avaliacaoCard.className = 'avaliacao-item';
-                // Mostra a nota e comentário da avaliação específica
                 avaliacaoCard.innerHTML = `
                     <div class="avaliacao-item-header">
                         <span class="avaliacao-item-usuario">Minha Avaliação (${formatarDataParaForm(av.dataAvaliacao)})</span>
@@ -250,7 +257,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     async function abrirModalDetalhes(midiaId) {
-        midiaAtualEmDetalhe = null; // Limpa cache
+        midiaAtualEmDetalhe = null;
         modalDetalhesMidia.classList.remove('escondido');
         detalheTitulo.textContent = 'Carregando...';
         detalhePoster.src = 'https://via.placeholder.com/200x300/004a99/FFFFFF?text=...';
@@ -276,7 +283,6 @@ window.addEventListener('DOMContentLoaded', () => {
             console.error("Erro ao abrir detalhes:", error);
             alert(error.message);
             modalDetalhesMidia.classList.add('escondido'); 
-            // Se a sessão expirou, força o logout
             if (error.message.includes("Sessão expirada")) {
                 telaApp.classList.add('escondido');
                 telaLogin.classList.remove('escondido');
@@ -333,7 +339,11 @@ window.addEventListener('DOMContentLoaded', () => {
             usuarioLogado = usuarioLogadoDTO; 
             document.getElementById('login-email').value = ''; document.getElementById('login-senha').value = '';
             telaLogin.classList.add('escondido'); telaCadastro.classList.add('escondido'); telaApp.classList.remove('escondido');
-            document.querySelector('.profile-user-info').textContent = usuarioLogado.nome;
+            
+            // ATUALIZA A UI COM OS DADOS DO UTILIZADOR
+            profileUserInfo.textContent = usuarioLogado.nome;
+            atualizarImagensDePerfil(usuarioLogado.fotoUrl); // <-- ATUALIZA A FOTO
+
             esconderTelasApp();
             telaAtualizacoes.classList.remove('escondido');
             carregarFeedUsuario();
@@ -344,20 +354,14 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- Navegação (Dentro do App)
     function esconderTelasApp() {
         if(telaAtualizacoes) telaAtualizacoes.classList.add('escondido');
-        if(telaAtualizacoesAmigos) telaAtualizacoesAmigos.classList.add('escondido');
         if(telaConfiguracoes) telaConfiguracoes.classList.add('escondido');
     }
-    if(btnAvatarHome) { btnAvatarHome.addEventListener('click', () => { esconderTelasApp(); telaAtualizacoes.classList.remove('escondido'); carregarFeedUsuario(); }); }
-    if(btnLogoHome) { btnLogoHome.addEventListener('click', () => { esconderTelasApp(); telaAtualizacoesAmigos.classList.remove('escondido'); }); }
+    if(btnLogoHome) { btnLogoHome.addEventListener('click', () => { esconderTelasApp(); telaAtualizacoes.classList.remove('escondido'); carregarFeedUsuario(); }); }
     if(btnAbrirConfig) { btnAbrirConfig.addEventListener('click', () => { esconderTelasApp(); telaConfiguracoes.classList.remove('escondido'); }); }
-    if(btnAbrirPedidos) { btnAbrirPedidos.addEventListener('click', (e) => { e.stopPropagation(); if(popupPedidosAmizade) popupPedidosAmizade.classList.remove('escondido'); }); }
-    if(btnAceitarAmigo) { btnAceitarAmigo.addEventListener('click', () => { popupPedidosAmizade.classList.add('escondido'); alert('Pedido aceito! (Fictício)'); }); }
-    if(btnRecusarAmigo) { btnRecusarAmigo.addEventListener('click', () => { popupPedidosAmizade.classList.add('escondido'); alert('Pedido recusado. (Fictício)'); }); }
     
+    // Click listener genérico (simplificado)
     document.addEventListener('click', (e) => {
-        if(popupPedidosAmizade && !popupPedidosAmizade.contains(e.target) && e.target !== btnAbrirPedidos) {
-            popupPedidosAmizade.classList.add('escondido');
-        }
+        // Fecha o menu de perfil se clicar fora
         if(menuPerfil && !menuPerfil.contains(e.target) && e.target !== btnMenuPerfil) {
              menuPerfil.classList.add('escondido'); 
         }
@@ -386,13 +390,10 @@ window.addEventListener('DOMContentLoaded', () => {
     if (btnDeletarMidia) {
         btnDeletarMidia.addEventListener('click', () => {
             if (!midiaAtualEmDetalhe) return;
-            
             const idParaDeletar = midiaAtualEmDetalhe.id;
-            // Usamos confirm() para evitar o bloqueio do navegador
             if (!confirm(`Tem certeza que quer deletar a mídia ID ${idParaDeletar}? Esta ação não pode ser desfeita.`)) {
                 return;
             }
-
             fetch(`/api/midias/${idParaDeletar}`, {
                 method: 'DELETE',
                 credentials: 'include'
@@ -402,10 +403,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (response.status === 404) { throw new Error('Mídia não encontrada.'); }
                 if (response.status === 500) { throw new Error('Erro interno do servidor. Verifique se esta mídia não está em uso.'); }
                 if (!response.ok) { throw new Error('Erro ao deletar a mídia.'); }
-                
                 alert('Mídia deletada com sucesso!');
                 modalDetalhesMidia.classList.add('escondido');
-                carregarFeedUsuario(); // Atualiza o feed principal
+                carregarFeedUsuario(); 
             })
             .catch(error => {
                 console.error(error);
@@ -414,7 +414,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- NOVO: API: Botão EDITAR MÍDIA ---
+    // --- API: Botão EDITAR MÍDIA ---
     if (btnEditarMidia) {
         btnEditarMidia.addEventListener('click', () => {
             if (!midiaAtualEmDetalhe) {
@@ -422,28 +422,16 @@ window.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 1. Guarda o ID da mídia que estamos a editar
             idMidiaEmEdicao = midiaAtualEmDetalhe.id;
-            const tipo = midiaAtualEmDetalhe.tipo.toLowerCase(); // "FILME" -> "filme"
-            
-            // --- CORREÇÃO AQUI ---
-            // Define a variável global que faltava
-            tipoMidiaAtual = tipo;
-            // --- FIM DA CORREÇÃO ---
-
-            // 2. Fecha o modal de detalhes
+            const tipo = midiaAtualEmDetalhe.tipo.toLowerCase();
+            tipoMidiaAtual = tipo; 
             modalDetalhesMidia.classList.add('escondido');
-
-            // 3. Abre o modal de "Adicionar Mídia", que vamos reutilizar
-            // Encontra o texto do botão (ex: "Filmes")
             const nomeBotao = document.querySelector(`.btn-tipo-midia[data-tipo="${tipo}"]`).textContent;
             abrirModalAddMidia(tipo, nomeBotao);
 
-            // 4. Preenche o formulário com os dados existentes
             midiaNomeInput.value = midiaAtualEmDetalhe.nome || '';
-            // Limpa a avaliação (editar é só para os dados principais)
             midiaComentariosInput.value = '';
-            resetarEstrelas();
+            resetarEstrelas(); 
 
             if (tipo === 'filme') {
                 midiaDiretorInput.value = midiaAtualEmDetalhe.diretor || '';
@@ -461,14 +449,56 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- LÓGICA DE PERFIL (REATIVADA) ---
+    if(btnMenuPerfil) { 
+        btnMenuPerfil.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            menuPerfil.classList.toggle('escondido'); 
+        }); 
+    }
+    if(btnAtualizarFoto) { 
+        btnAtualizarFoto.addEventListener('click', () => { 
+            menuPerfil.classList.add('escondido'); 
+            inputFotoUrl.value = usuarioLogado.fotoUrl || ''; // Preenche com a URL atual
+            modalEditarPerfil.classList.remove('escondido'); 
+        }); 
+    }
+    if(btnFecharModalFoto) { 
+        btnFecharModalFoto.addEventListener('click', () => { 
+            modalEditarPerfil.classList.add('escondido'); 
+        }); 
+    }
+    if(btnSalvarFoto) { 
+        btnSalvarFoto.addEventListener('click', () => { 
+            const novaFotoUrl = inputFotoUrl.value;
+            if (!novaFotoUrl || !novaFotoUrl.startsWith('http')) {
+                alert("Por favor, insira um URL válido (começando com http:// ou https://).");
+                return;
+            }
 
-    // --- Lógica (Menu de Perfil e Modais de Edição)
-    if(btnMenuPerfil) { btnMenuPerfil.addEventListener('click', (e) => { e.stopPropagation(); menuPerfil.classList.toggle('escondido'); }); }
-    if(btnAtualizarFoto) { btnAtualizarFoto.addEventListener('click', () => { menuPerfil.classList.add('escondido'); inputFotoPerfil.click(); }); }
-    if(inputFotoPerfil) { inputFotoPerfil.addEventListener('change', (e) => { if (e.target.files && e.target.files[0]) { alert('Nova foto selecionada: ' + e.target.files[0].name); } }); }
-    if(btnAtualizarDados) { btnAtualizarDados.addEventListener('click', () => { menuPerfil.classList.add('escondido'); modalEditarPerfil.classList.remove('escondido'); }); }
-    if(btnFecharModal) { btnFecharModal.addEventListener('click', () => { modalEditarPerfil.classList.add('escondido'); }); }
-    if(btnSalvarDados) { btnSalvarDados.addEventListener('click', () => { alert('Dados enviados para atualização! (fictício)'); modalEditarPerfil.classList.add('escondido'); }); }
+            fetch('/api/usuarios/atualizar-foto', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fotoUrl: novaFotoUrl })
+            })
+            .then(response => {
+                if (response.status === 401) { throw new Error('Sessão expirada.'); }
+                if (!response.ok) { throw new Error('Não foi possível atualizar a foto.'); }
+                
+                alert('Foto atualizada com sucesso!');
+                modalEditarPerfil.classList.add('escondido');
+                
+                // Atualiza a foto na UI e no objeto 'usuarioLogado'
+                usuarioLogado.fotoUrl = novaFotoUrl;
+                atualizarImagensDePerfil(novaFotoUrl);
+            })
+            .catch(error => {
+                console.error(error);
+                alert(error.message);
+            });
+        }); 
+    }
 
     // --- Lógica (Configurações e Apagar Conta)
     if(togglePrivacyInput) {
@@ -484,6 +514,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if(btnFecharModalApagar) { btnFecharModalApagar.addEventListener('click', () => { modalApagarConta.classList.add('escondido'); }); }
     if(btnConfirmarApagar) {
         btnConfirmarApagar.addEventListener('click', () => {
+            // TODO: Implementar chamada de API para apagar conta
             modalApagarConta.classList.add('escondido');
             alert('Conta apagada com sucesso! (Fictício)');
             telaApp.classList.add('escondido');
@@ -494,8 +525,8 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- Lógica (Adicionar Mídia - Botão '+')
     if(btnAbrirTipoMidia) { 
         btnAbrirTipoMidia.addEventListener('click', () => { 
-            idMidiaEmEdicao = null; // Garante que estamos em modo "novo"
-            tipoMidiaAtual = null; // Limpa o tipo
+            idMidiaEmEdicao = null; 
+            tipoMidiaAtual = null; 
             modalTipoMidia.classList.remove('escondido'); 
         }); 
     }
@@ -507,7 +538,6 @@ window.addEventListener('DOMContentLoaded', () => {
             if (tipoMidiaAtual === 'nova') {
                 alert('Função "Nova Categoria" não implementada.'); return;
             }
-            // Não limpamos o idMidiaEmEdicao aqui, pois pode ter sido definido pelo botão "Editar"
             abrirModalAddMidia(tipoMidiaAtual, botao.textContent.trim());
         });
     });
@@ -516,7 +546,6 @@ window.addEventListener('DOMContentLoaded', () => {
         modalTipoMidia.classList.add('escondido');
         const icones = { 'musica': '🎵', 'filme': '🎬', 'serie': '📺', 'livro': '📖' };
         
-        // Altera o título se estiver em modo de edição
         if (idMidiaEmEdicao) {
             addMidiaTitle.textContent = `📝 Editando ${nomeTipo}`;
         } else {
@@ -527,7 +556,6 @@ window.addEventListener('DOMContentLoaded', () => {
         const camposParaMostrar = document.querySelectorAll(`.form-group[data-tipo="${tipo}"]`);
         camposParaMostrar.forEach(campo => { campo.style.display = 'block'; });
         
-        // Limpa o formulário APENAS se não estivermos a editar
         if (!idMidiaEmEdicao) {
             if(addMidiaForm) addMidiaForm.reset(); 
             resetarEstrelas(); 
@@ -554,23 +582,20 @@ window.addEventListener('DOMContentLoaded', () => {
     if(btnFecharAddMidia) { 
         btnFecharAddMidia.addEventListener('click', () => { 
             modalAddMidia.classList.add('escondido'); 
-            idMidiaEmEdicao = null; // Limpa o ID de edição ao fechar
-            tipoMidiaAtual = null; // Limpa o tipo ao fechar
+            idMidiaEmEdicao = null; 
+            tipoMidiaAtual = null;
         }); 
     }
 
     // --- API: Auto-fill (só funciona se for mídia NOVA) ---
     if(midiaNomeInput) {
         midiaNomeInput.addEventListener('blur', () => { 
-            // Só faz auto-fill se for uma mídia NOVA (sem ID de edição)
             if (idMidiaEmEdicao) return; 
-
             const nome = midiaNomeInput.value;
             if (nome.length < 3 || (tipoMidiaAtual !== 'filme' && tipoMidiaAtual !== 'serie')) {
                 return; 
             }
             
-            // ... (lógica de auto-fill)
             if (tipoMidiaAtual === 'filme') {
                  if (midiaAnoLancamentoInput) midiaAnoLancamentoInput.value = '';
                  if (midiaDiretorInput) midiaDiretorInput.value = '';
@@ -605,9 +630,8 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             
             let url = `/api/midias/${tipoMidiaAtual}`;
-            let metodo = 'POST'; // Método padrão é Criar
+            let metodo = 'POST'; 
 
-            // Se tivermos um ID, muda para o modo Edição (PUT)
             if (idMidiaEmEdicao) {
                 url = `/api/midias/${tipoMidiaAtual}/${idMidiaEmEdicao}`;
                 metodo = 'PUT';
@@ -620,7 +644,6 @@ window.addEventListener('DOMContentLoaded', () => {
             if (nome === "") { alert('O campo "Nome" é obrigatório!'); return; }
             payload.nome = nome; payload.nota = nota; payload.comentario = comentario;
 
-            // --- TRADUÇÃO DO FRONT-END (HTML) PARA O BACK-END (DTO) ---
             if (tipoMidiaAtual === 'filme') {
                 payload.diretor = document.getElementById('midia-diretor').value;
                 payload.anoLancamento = parseInt(document.getElementById('midia-ano-lancamento').value, 10) || 0; 
@@ -629,7 +652,6 @@ window.addEventListener('DOMContentLoaded', () => {
             } else if (tipoMidiaAtual === 'musica') {
                 payload.artista = document.getElementById('midia-artista').value;
                 payload.album = document.getElementById('midia-album').value;
-                // Formata a data para a API (DD/MM/YYYY -> YYYY-MM-DD)
                 payload.dataEstreia = formatarDataParaAPI(document.getElementById('midia-data-estreia').value);
             } else if (tipoMidiaAtual === 'livro') {
                 payload.autor = document.getElementById('midia-autor').value;
@@ -637,7 +659,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             
             fetch(url, {
-                method: metodo, // Usa 'POST' ou 'PUT'
+                method: metodo, 
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -648,7 +670,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 return response.json();
             })
             .then(midiaSalva => {
-                // Altera a mensagem se for edição
                 if (idMidiaEmEdicao) {
                     alert('Mídia atualizada com sucesso! ID: ' + midiaSalva.id);
                 } else {
@@ -656,14 +677,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 modalAddMidia.classList.add('escondido');
-                idMidiaEmEdicao = null; // Limpa o ID de edição
-                tipoMidiaAtual = null; // Limpa o tipo
-                carregarFeedUsuario(); // <-- ATUALIZA O FEED
+                idMidiaEmEdicao = null; 
+                tipoMidiaAtual = null;
+                carregarFeedUsuario(); 
             })
             .catch(error => { 
                 console.error(error); 
                 alert(error.message); 
-                // Não limpa os IDs aqui para o utilizador poder tentar novamente
             });
         });
     }
