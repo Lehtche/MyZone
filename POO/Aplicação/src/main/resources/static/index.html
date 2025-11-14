@@ -42,7 +42,7 @@
                         <div class="category-header"><span>MÚSICAS</span></div>
                         <div class="updates-grid" id="feed-musica"></div>
 
-                        <div class="category-header"><span>LIVROS</span></div>
+                        <div class="category-header"><span>ANIMES/LIVROS</span></div>
                         <div class="updates-grid" id="feed-livro"></div>
 
                         <h2 class="feed-subtitle">Amigos</h2>
@@ -64,10 +64,9 @@
     </section> 
     
     <input type="file" id="input-foto-perfil" class="escondido" accept="image/*">
-
     <div id="modal-editar-perfil" class="modal-overlay escondido"><div class="modal-content"><button id="btn-fechar-modal" class="btn-fechar-modal">X</button><div class="auth-form-container modal-form"><h2>Atualizar Dados</h2><p>Deixe em branco os campos que não quer alterar.</p><div class="input-group"><label for="edit-nome">Nome</label><input type="text" id="edit-nome" placeholder="Letícia #001"></div><div class="input-group"><label for="edit-email">E-mail</label><input type="email" id="edit-email" placeholder="email.atual@dominio.com"></div><div class="input-group"><label for="edit-nascimento">Data de Nascimento</label><input type="text" id="edit-nascimento" placeholder="00/00/0000"></div><div class="input-group"><label for="edit-bio">Bio</label><input type="text" id="edit-bio" placeholder="Essa é a minha Bio :D"></div><div class="input-group"><label for="edit-senha">Nova Senha</label><input type="password" id="edit-senha" placeholder="********"></div><div class="input-group"><label for="edit-confirma-senha">Confirmar Senha</label><input type="password" id="edit-confirma-senha" placeholder="********"></div><button type="button" class="btn-auth" id="btn-salvar-dados">Salvar Alterações</button></div></div></div>
     <div id="modal-apagar-conta" class="modal-overlay escondido"><div class="modal-content"><button id="btn-fechar-modal-apagar" class="btn-fechar-modal">X</button><div class="modal-body-center"><h2>Apagar Conta</h2><p>Tem certeza que quer apagar sua conta? Esta ação não pode ser desfeita.</p><button class="btn-auth btn-danger" id="btn-confirmar-apagar">Confirmar</button></div></div></div>
-    <div id="modal-tipo-midia" class="modal-overlay escondido"><div class="tipo-midia-window"> <div class="tipo-midia-header-bar"> <span>Tipo de Mídia</span><button id="btn-fechar-tipo-midia" class="btn-fechar-popup"></button> </div><div class="tipo-midia-content"> <button class="btn-tipo-midia" data-tipo="filme">Filmes</button><button class="btn-tipo-midia" data-tipo="serie">Series</button><button class="btn-tipo-midia" data-tipo="musica">Música</button><button class="btn-tipo-midia" data-tipo="livro">Livros</button> <button class="btn-tipo-midia nova-categoria-btn" data-tipo="nova">Nova categoria</button></div></div></div>
+    <div id="modal-tipo-midia" class="modal-overlay escondido"><div class="tipo-midia-window"> <div class="tipo-midia-header-bar"> <span>Tipo de Mídia</span><button id="btn-fechar-tipo-midia" class="btn-fechar-popup"></button> </div><div class="tipo-midia-content"> <button class="btn-tipo-midia" data-tipo="filme">Filmes</button><button class="btn-tipo-midia" data-tipo="serie">Series</button><button class="btn-tipo-midia" data-tipo="musica">Música</button><button class="btn-tipo-midia" data-tipo="livro">Animes/Livros</button> <button class="btn-tipo-midia nova-categoria-btn" data-tipo="nova">Nova categoria</button></div></div></div>
     
     <div id="modal-add-midia" class="modal-overlay escondido">
         <div class="add-midia-window"> <div class="add-midia-header-bar"> <span id="add-midia-title">🎵 Nova música</span><button id="btn-fechar-add-midia" class="btn-fechar-popup"></button> </div>
@@ -111,6 +110,11 @@
                         <p id="detalhe-sinopse">Carregando sinopse...</p>
                         <hr>
                         <div id="detalhe-info-extra"></div>
+                        
+                        <button class="btn-auth" id="btn-editar-midia" style="background-color: #0056b3; border-color: #001a4d; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;">
+                            Editar
+                        </button>
+                        
                         <button class="btn-auth btn-danger btn-deletar-midia" id="btn-deletar-midia">
                             Deletar Mídia
                         </button>

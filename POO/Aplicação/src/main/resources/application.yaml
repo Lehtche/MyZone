@@ -5,8 +5,8 @@ spring:
   # --- 1. Configuração do MySQL (JPA) ---
   datasource:
     url: jdbc:mysql://localhost:3306/myzone_db?createDatabaseIfNotExist=true
-    username: root
-    password: QWERqwer132 # (Sua senha do MySQL)
+    username: myzone_app_user
+    password: QWERqwer132
     
   jpa:
     properties:

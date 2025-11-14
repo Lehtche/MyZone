@@ -1,8 +1,10 @@
 package dev.JavaLovers.MyZone.controller;
 
 import dev.JavaLovers.MyZone.dto.LoginRequestDTO;
-import dev.JavaLovers.MyZone.dto.UsuarioResponseDTO; // <-- IMPORTAR NOVO DTO
+import dev.JavaLovers.MyZone.dto.UsuarioResponseDTO; 
+import dev.JavaLovers.MyZone.model.GrupoUsuario; 
 import dev.JavaLovers.MyZone.model.Usuario;
+import dev.JavaLovers.MyZone.repository.UsuarioRepository; // <-- IMPORTAR
 import dev.JavaLovers.MyZone.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,27 +14,33 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority; 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+
+import java.time.LocalDate; // <-- IMPORTAR
 import java.util.ArrayList;
+import java.util.List; 
+import java.util.stream.Collectors; 
 
 @RestController
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final UsuarioRepository usuarioRepository; // <-- INJETAR REPOSITÓRIO
 
     @Autowired
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, UsuarioRepository usuarioRepository) { // <-- ATUALIZAR
         this.usuarioService = usuarioService;
+        this.usuarioRepository = usuarioRepository; // <-- ATUALIZAR
     }
 
-    // --- ATUALIZADO: Retorna o DTO seguro ---
+    // --- CADASTRO (sem alteração) ---
     @PostMapping("/cadastro")
     public ResponseEntity<UsuarioResponseDTO> cadastrarUsuario(@RequestBody Usuario novoUsuario) {
         try {
             Usuario usuarioSalvo = usuarioService.cadastrar(novoUsuario);
-            // Converte para o DTO de resposta
             UsuarioResponseDTO responseDto = new UsuarioResponseDTO(
                 usuarioSalvo.getId(),
                 usuarioSalvo.getNome(),
@@ -41,34 +49,28 @@ public class UsuarioController {
             );
             return ResponseEntity.ok(responseDto);
         } catch (Exception e) {
-             // Retorna o erro exato (ex: "Email já cadastrado")
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(null); 
         }
     }
 
-    // --- ATUALIZADO: Cria a sessão de login ---
+    // --- LOGIN (sem alteração) ---
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponseDTO> login(@RequestBody LoginRequestDTO loginDTO, HttpServletRequest request) {
         try {
             Usuario usuario = usuarioService.login(loginDTO.getEmail(), loginDTO.getSenha());
+            
+            List<SimpleGrantedAuthority> authorities = usuario.getGrupos().stream()
+                .map(grupo -> new SimpleGrantedAuthority(grupo.getNome()))
+                .collect(Collectors.toList());
 
-            // --- A MÁGICA ACONTECE AQUI ---
-            // 1. Cria a autenticação
             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                usuario.getEmail(), // O 'principal' (é o email que usamos para buscar o usuário)
-                null,               // Credenciais (a senha já foi verificada)
-                new ArrayList<>()   // Autoridades (roles), pode deixar vazio por enquanto
-            );
+                usuario.getEmail(), null, authorities );
 
-            // 2. Coloca o usuário no contexto de segurança do Spring
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // 3. Cria a sessão HTTP (que gera o cookie JSESSIONID)
             HttpSession session = request.getSession(true);
             session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
-            // --- FIM DA MÁGICA ---
 
-            // Converte para o DTO de resposta
             UsuarioResponseDTO responseDto = new UsuarioResponseDTO(
                 usuario.getId(),
                 usuario.getNome(),
@@ -81,5 +83,18 @@ public class UsuarioController {
         } catch (Exception e) {
             return ResponseEntity.status(401).build(); // 401 Unauthorized
         }
+    }
+
+    // --- NOVO ENDPOINT PARA DEMONSTRAR A VIEW ---
+    /**
+     * Endpoint para demonstrar o uso da View 'VW_Usuarios_Publicos'.
+     * Retorna uma lista de utilizadores sem dados sensíveis.
+     * Acessível apenas por utilizadores logados.
+     */
+    @GetMapping("/publicos")
+    public ResponseEntity<List<UsuarioRepository.UsuarioPublicoView>> getUsuariosPublicos() {
+        // Usa o método do repositório que chama a View nativa
+        List<UsuarioRepository.UsuarioPublicoView> usuarios = usuarioRepository.findAllPublic();
+        return ResponseEntity.ok(usuarios);
     }
 }
