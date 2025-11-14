@@ -26,6 +26,8 @@ public class MidiaService {
     @Autowired private LivroRepository livroRepository;
     @Autowired private MidiaRepository midiaRepository;
     @Autowired private AvaliacaoRepository avaliacaoRepository;
+
+    @Autowired private ColecaoRepository colecaoRepository; // <-- 1. INJETAR O NOVO REPOSITÓRIO
     
     // --- TMDb (API) ---
     @Value("${tmdb.api.key}")
@@ -36,11 +38,14 @@ public class MidiaService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     
-    // --- ATUALIZADO: Busca de Gênero e Sinopse no TMDb ---
+    // --- ATUALIZADO: Busca de Diretor, Gênero e Sinopse no TMDb ---
     public TmdbResponseDTO buscarDetalhesTmdb(String query, String tipo) {
         String searchType = "movie"; 
         if ("serie".equals(tipo)) { searchType = "tv"; }
-        else if ("musica".equals(tipo) || "livro".equals(tipo)) { return null; }
+        else if ("musica".equals(tipo) || "livro".equals(tipo)) { 
+            // Retorna DTO vazio se não for filme ou série
+            return new TmdbResponseDTO(null, null, 0, null, null); 
+        }
 
         try {
             // 1. CHAMDADA 1: Pesquisa a mídia para obter o ID
@@ -64,7 +69,7 @@ public class MidiaService {
                 String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
                 JsonNode detailsRoot = objectMapper.readTree(detailsResponse);
 
-                // 3. Extrai todos os dados
+                // 3. Extrai dados (Poster, Sinopse, Ano, Gênero)
                 String posterPath = detailsRoot.path("poster_path").asText(null);
                 String posterUrl = (posterPath != null) ? "https://image.tmdb.org/t/p/w500" + posterPath : null;
                 String sinopse = detailsRoot.path("overview").asText(null);
@@ -78,15 +83,38 @@ public class MidiaService {
                 String genero = "N/A";
                 JsonNode genres = detailsRoot.path("genres");
                 if (genres.isArray() && genres.size() > 0) {
-                    genero = genres.get(0).path("name").asText("N/A"); // Pega só o primeiro gênero
+                    genero = genres.get(0).path("name").asText("N/A");
                 }
 
-                return new TmdbResponseDTO(posterUrl, sinopse, ano, genero);
+                // --- 4. CORREÇÃO: CHAMADA 3 (Buscar Diretor) ---
+                String diretor = "N/A";
+                if ("movie".equals(searchType)) {
+                    String creditsUrl = String.format(
+                        "https://api.themoviedb.org/3/%s/%s/credits?api_key=%s&language=pt-BR",
+                        searchType, midiaId, tmdbApiKey
+                    );
+                    String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
+                    JsonNode creditsRoot = objectMapper.readTree(creditsResponse);
+                    JsonNode crew = creditsRoot.path("crew");
+                    if (crew.isArray()) {
+                        for (JsonNode crewMember : crew) {
+                            if ("Director".equals(crewMember.path("job").asText())) {
+                                diretor = crewMember.path("name").asText("N/A");
+                                break; // Encontrou o diretor, pode parar
+                            }
+                        }
+                    }
+                }
+                // --- Fim da Correção ---
+
+                // 5. Retorna o DTO completo
+                return new TmdbResponseDTO(posterUrl, sinopse, ano, genero, diretor); // <-- ATUALIZADO
             }
         } catch (Exception e) {
             System.err.println("Erro ao buscar no TMDb: " + e.getMessage());
         }
-        return new TmdbResponseDTO(null, null, 0, null); // Retorna vazio se não achar
+        // Retorna DTO vazio se não achar
+        return new TmdbResponseDTO(null, null, 0, null, null); 
     }
 
 
@@ -108,21 +136,36 @@ public class MidiaService {
         }
     }
 
-    // --- MÉTODOS DE CADASTRO (ATUALIZADOS COM SINOPSE) ---
+    // --- MÉTODOS DE CADASTRO (Não precisam de alteração,
+    // pois o TMDb busca os dados extras automaticamente) ---
     
     @Transactional
     public Filme salvarFilme(FilmeDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
-        TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "filme");
+        // Busca os dados do TMDb (incluindo o diretor)
+        TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "filme"); 
 
         Filme filme = new Filme();
         filme.setNome(dto.getNome());
-        filme.setDiretor(dto.getDiretor());
-        filme.setAnoLancamento(dto.getAnoLancamento()); 
         filme.setCadastradoPor(usuario);
+        
+        // Se o utilizador não preencheu o diretor, usa o do TMDb
+        if (dto.getDiretor() == null || dto.getDiretor().isEmpty()) {
+            filme.setDiretor(tmdbData.getDiretor());
+        } else {
+            filme.setDiretor(dto.getDiretor()); // Usa o que o utilizador digitou
+        }
+        
+        // Se o utilizador não preencheu o ano, usa o do TMDb
+        if (dto.getAnoLancamento() == 0) {
+            filme.setAnoLancamento(tmdbData.getAnoLancamento());
+        } else {
+            filme.setAnoLancamento(dto.getAnoLancamento()); // Usa o que o utilizador digitou
+        }
+
         if (tmdbData != null) {
             filme.setPosterUrl(tmdbData.getPosterUrl());
-            filme.setSinopse(tmdbData.getSinopse()); // <-- SALVA A SINOPSE
+            filme.setSinopse(tmdbData.getSinopse()); 
         }
         
         Filme filmeSalvo = filmeRepository.save(filme);
@@ -137,15 +180,16 @@ public class MidiaService {
 
         Serie serie = new Serie();
         serie.setNome(dto.getNome());
-        serie.setGenero(dto.getGenero()); // Salva o gênero
         serie.setCadastradoPor(usuario);
         
         if (tmdbData != null) {
             serie.setPosterUrl(tmdbData.getPosterUrl());
-            serie.setSinopse(tmdbData.getSinopse()); // <-- SALVA A SINOPSE
-            // Se o usuário não digitou um gênero, usa o do TMDb
+            serie.setSinopse(tmdbData.getSinopse());
+            // Se o utilizador não digitou um gênero, usa o do TMDb
             if (dto.getGenero() == null || dto.getGenero().isEmpty()) {
                 serie.setGenero(tmdbData.getGenero());
+            } else {
+                serie.setGenero(dto.getGenero()); // Usa o que o utilizador digitou
             }
         }
         
@@ -154,7 +198,6 @@ public class MidiaService {
         return serieSalva;
     }
     
-    // (salvarMusica e salvarLivro continuam iguais)
     @Transactional
     public Musica salvarMusica(MusicaDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
@@ -195,11 +238,11 @@ public class MidiaService {
                 .orElseThrow(() -> new RuntimeException("Mídia não encontrada."));
     }
 
-    // --- NOVO MÉTODO DE DELETE ---
+    // --- 2. MÉTODO DE DELETE (TOTALMENTE ATUALIZADO) ---
     @Transactional
     public void deletarMidia(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
-        Midia midia = getMidiaPorId(midiaId);
+        Midia midia = getMidiaPorId(midiaId); // Isso busca a entidade correta (ex: Serie, Filme)
 
         // 1. Verifica se o usuário logado é o dono da mídia
         if (!midia.getCadastradoPor().getId().equals(usuario.getId())) {
@@ -212,8 +255,30 @@ public class MidiaService {
             avaliacaoRepository.deleteAll(avaliacoes);
         }
 
-        // 3. Deleta a mídia (do MySQL)
-        // (E todas as relações em 'colecao' e 'episodio' devem ser deletadas em cascata - configure no @OneToMany)
-        midiaRepository.delete(midia);
+        // 3. CORREÇÃO (Problema da Colecao): Deleta as referências em 'colecao'
+        List<Colecao> colecoes = colecaoRepository.findByMidia(midia);
+        if (!colecoes.isEmpty()) {
+            colecaoRepository.deleteAll(colecoes);
+        }
+
+        // 4. CORREÇÃO (Problema do Erro 1451): Deleta usando o repositório específico
+        // Isto garante que a tabela "filha" (ex: 'serie') seja apagada
+        // antes da tabela "pai" ('midia').
+        
+        if (midia instanceof Filme) {
+            filmeRepository.delete((Filme) midia);
+        } else if (midia instanceof Serie) {
+            // A entidade Serie 
+            // usa CascadeType.ALL para episodios,
+            // então apagar a série também apagará os episódios.
+            serieRepository.delete((Serie) midia);
+        } else if (midia instanceof Musica) {
+            musicaRepository.delete((Musica) midia);
+        } else if (midia instanceof Livro) {
+            livroRepository.delete((Livro) midia);
+        } else {
+            // Fallback (pode falhar, mas é uma última tentativa)
+            midiaRepository.delete(midia);
+        }
     }
 }
