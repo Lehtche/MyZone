@@ -2,15 +2,15 @@ package dev.JavaLovers.MyZone.dto;
 
 public class SerieDTO {
     private String nome;
-    private int temporadas;
+    private String genero; // <-- Trocado de 'int temporadas'
     private int nota;
     private String comentario;
 
     // Getters e Setters...
     public String getNome() { return nome; }
     public void setNome(String nome) { this.nome = nome; }
-    public int getTemporadas() { return temporadas; }
-    public void setTemporadas(int temporadas) { this.temporadas = temporadas; }
+    public String getGenero() { return genero; }
+    public void setGenero(String genero) { this.genero = genero; }
     public int getNota() { return nota; }
     public void setNota(int nota) { this.nota = nota; }
     public String getComentario() { return comentario; }

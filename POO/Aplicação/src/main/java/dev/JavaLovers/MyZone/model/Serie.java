@@ -1,12 +1,18 @@
 package dev.JavaLovers.MyZone.model;
 
-import jakarta.persistence.*;
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "serie")
 public class Serie extends Midia {
-    private int temporadas;
+    
+    // --- CAMPO ATUALIZADO ---
+    private String genero; // Trocado de 'int temporadas'
 
     @OneToMany(mappedBy = "serie", cascade = CascadeType.ALL)
     private List<Episodio> episodios;
@@ -14,18 +20,19 @@ public class Serie extends Midia {
     public Serie() {
         super();
     }
-
-    public Serie(String nome, Usuario cadastradoPor, int temporadas) {
+    
+    // Construtor atualizado (opcional, mas boa prática)
+    public Serie(String nome, Usuario cadastradoPor, String genero) {
         super(nome, cadastradoPor);
-        this.temporadas = temporadas;
+        this.genero = genero;
     }
 
-    // Getters e Setters 
-    public int getTemporadas() { 
-        return temporadas; 
+    // --- GETTERS/SETTERS ATUALIZADOS ---
+    public String getGenero() {
+        return genero;
     }
-    public void setTemporadas(int temporadas) { 
-        this.temporadas = temporadas; 
+    public void setGenero(String genero) {
+        this.genero = genero;
     }
 
     public List<Episodio> getEpisodios() {
@@ -42,6 +49,6 @@ public class Serie extends Midia {
 
     @Override
     public String toString() {
-        return super.toString() + " | Temporadas: " + temporadas;
+        return super.toString() + " | Gênero: " + genero;
     }
 }

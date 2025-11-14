@@ -2,11 +2,11 @@ spring:
   application:
     name: MyZone
   
-  # Configuração do banco de dados MySQL
+  # --- 1. Configuração do MySQL (JPA) ---
   datasource:
     url: jdbc:mysql://localhost:3306/myzone_db?createDatabaseIfNotExist=true
     username: root
-    password: 2706
+    password: QWERqwer132 # (Sua senha do MySQL)
     
   jpa:
     properties:
@@ -20,3 +20,15 @@ spring:
       ddl-auto: update
     # (Opcional) Mostra o SQL no console, ótimo para debug
     show-sql: true
+    
+  # --- 2. Configuração do MongoDB (com indentação correta) ---
+  # (Note que 'data' está no mesmo nível de 'jpa' e 'datasource')
+  data:
+    mongodb:
+      # "myzone_mongo_db" será o nome do seu novo banco
+      uri: mongodb://localhost:27017/myzone_mongo_db
+
+# --- 3. Chave da API (Sem indentação, nível raiz) ---
+tmdb:
+  api:
+    key: "8540f532b05e225bb1803f9941d43982"

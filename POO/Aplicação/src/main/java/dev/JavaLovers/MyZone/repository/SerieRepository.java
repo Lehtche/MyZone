@@ -1,3 +1,4 @@
+// 3. SerieRepository.java (SQL)
 package dev.JavaLovers.MyZone.repository;
 import dev.JavaLovers.MyZone.model.Serie;
 import org.springframework.data.jpa.repository.JpaRepository;

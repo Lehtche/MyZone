@@ -41,7 +41,8 @@ public class UsuarioController {
             );
             return ResponseEntity.ok(responseDto);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+             // Retorna o erro exato (ex: "Email já cadastrado")
+            return ResponseEntity.badRequest().body(null);
         }
     }
 
@@ -54,7 +55,7 @@ public class UsuarioController {
             // --- A MÁGICA ACONTECE AQUI ---
             // 1. Cria a autenticação
             Authentication authentication = new UsernamePasswordAuthenticationToken(
-                usuario.getEmail(), // O 'principal' (geralmente o email)
+                usuario.getEmail(), // O 'principal' (é o email que usamos para buscar o usuário)
                 null,               // Credenciais (a senha já foi verificada)
                 new ArrayList<>()   // Autoridades (roles), pode deixar vazio por enquanto
             );

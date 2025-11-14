@@ -17,7 +17,7 @@ public class UsuarioResponseDTO {
         this.dataNascimento = dataNascimento;
     }
 
-    // Getters
+    // Getters (necessários para o Spring converter em JSON)
     public Long getId() { return id; }
     public String getNome() { return nome; }
     public String getEmail() { return email; }
