@@ -7,25 +7,34 @@ import jakarta.persistence.Table;
 @Table(name = "musica")
 public class Musica extends Midia {
     private String artista;
-    private String genero;
+    private String album;
+    private String dataEstreia;
 
     public Musica() {};
 
-    public Musica(String nome, Usuario cadastradoPor, String artista, String genero) {
+    public Musica(String nome, Usuario cadastradoPor, String artista, String album, String dataEstreia) {
         super(nome, cadastradoPor);
         this.artista = artista;
-        this.genero = genero;
+        this.album = album;
+        this.dataEstreia = dataEstreia;
     }
 
     public String getArtista() { 
         return artista; 
     }
     public void setArtista(String artista) { this.artista = artista; }
-    public String getGenero() { 
-        return genero; 
+    
+    public String getAlbum() { 
+        return album; 
     }
-    public void setGenero(String genero) { 
-        this.genero = genero; 
+    public void setAlbum(String album) { 
+        this.album = album; 
+    }
+    public String getDataEstreia() { 
+        return dataEstreia; 
+    }
+    public void setDataEstreia(String dataEstreia) { 
+        this.dataEstreia = dataEstreia; 
     }
 
     @Override
@@ -35,6 +44,6 @@ public class Musica extends Midia {
 
     @Override
     public String toString() {
-        return super.toString() + " | Artista: " + artista + " | Gênero: " + genero;
+        return super.toString() + " | Artista: " + artista + " | Album: " + album + " | Data de Estreia: " + dataEstreia;
     }
 }

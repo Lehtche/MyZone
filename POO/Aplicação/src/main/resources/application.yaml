@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/myzone_db?createDatabaseIfNotExist=true
     username: root
-    password: QWERqwer132
+    password: 2706
     
   jpa:
     properties:
