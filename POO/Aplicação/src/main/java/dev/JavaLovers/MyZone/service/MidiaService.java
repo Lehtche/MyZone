@@ -78,12 +78,19 @@ public class MidiaService {
         
         Musica musica = new Musica();
         musica.setNome(dto.getNome());
-        musica.setArtista(dto.getArtista());
         musica.setCadastradoPor(usuario);
-        // (Adicione os outros campos aqui: album, etc.)
 
+        // --- AQUI ESTÁ A CORREÇÃO ---
+        musica.setArtista(dto.getArtista());
+        musica.setAlbum(dto.getAlbum());           // <-- ADICIONE ESTA LINHA
+        musica.setDataEstreia(dto.getDataEstreia()); // <-- ADICIONE ESTA LINHA
+
+        // 3. Salva a MÚSICA (agora completa)
         Musica musicaSalva = musicaRepository.save(musica);
+        
+        // O resto do seu código para salvar a avaliação está perfeito
         salvarAvaliacao(usuario, musicaSalva, dto.getNota(), dto.getComentario());
+        
         return musicaSalva;
     }
 
