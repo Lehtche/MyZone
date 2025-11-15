@@ -1,10 +1,9 @@
 package dev.JavaLovers.MyZone.service;
 
-import dev.JavaLovers.MyZone.dto.*;
-import dev.JavaLovers.MyZone.model.*;
-import dev.JavaLovers.MyZone.repository.*;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,9 +11,30 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.JavaLovers.MyZone.dto.FilmeDTO;
+import dev.JavaLovers.MyZone.dto.LivroApiResponseDTO;
+import dev.JavaLovers.MyZone.dto.LivroDTO;
+import dev.JavaLovers.MyZone.dto.MusicaApiResponseDTO;
+import dev.JavaLovers.MyZone.dto.MusicaDTO;
+import dev.JavaLovers.MyZone.dto.SerieDTO;
+import dev.JavaLovers.MyZone.dto.TmdbResponseDTO;
+import dev.JavaLovers.MyZone.model.Avaliacao;
+import dev.JavaLovers.MyZone.model.Filme;
+import dev.JavaLovers.MyZone.model.Livro;
+import dev.JavaLovers.MyZone.model.Midia;
+import dev.JavaLovers.MyZone.model.Musica;
+import dev.JavaLovers.MyZone.model.Serie;
+import dev.JavaLovers.MyZone.model.Usuario;
+import dev.JavaLovers.MyZone.repository.AvaliacaoRepository;
+import dev.JavaLovers.MyZone.repository.FilmeRepository;
+import dev.JavaLovers.MyZone.repository.LivroRepository;
+import dev.JavaLovers.MyZone.repository.MidiaRepository;
+import dev.JavaLovers.MyZone.repository.MusicaRepository;
+import dev.JavaLovers.MyZone.repository.SerieRepository;
+import dev.JavaLovers.MyZone.repository.UsuarioRepository;
 
 @Service
 public class MidiaService {
@@ -41,7 +61,7 @@ public class MidiaService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     
-    // --- BUSCA DE FILMES/SÉRIES (TMDb) - (Sem alteração) ---
+    // --- BUSCA DE FILMES/SÉRIES (TMDb) ---
     public TmdbResponseDTO buscarDetalhesTmdb(String query, String tipo) {
         String searchType = "movie"; 
         if ("serie".equals(tipo)) { searchType = "tv"; }
@@ -49,11 +69,15 @@ public class MidiaService {
             return new TmdbResponseDTO(null, null, 0, null, null); 
         }
         try {
-            String searchUrl = String.format(
-                "https://api.themoviedb.org/3/search/%s?query=%s&api_key=%s&language=pt-BR",
-                searchType, query.replace(" ", "+"), tmdbApiKey
-            );
+            // Constrói a URL de forma segura com UriComponentsBuilder
+            String searchUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/search/" + searchType)
+                .queryParam("query", query) // O queryParam() faz o encoding automático
+                .queryParam("api_key", tmdbApiKey)
+                .queryParam("language", "pt-BR")
+                .toUriString();
+            
             String searchResponse = restTemplate.getForObject(searchUrl, String.class);
+            
             JsonNode searchRoot = objectMapper.readTree(searchResponse);
             JsonNode results = searchRoot.path("results");
             
@@ -111,14 +135,22 @@ public class MidiaService {
         String genero = "N/A";
         String anoLancamento = "";
         String posterUrl = null;
-        String sinopse = null; // <-- VARIÁVEL ADICIONADA
+        String sinopse = null; 
 
         try {
-            // Constrói uma query de pesquisa flexível para o Google Books
-            String googleQuery = query; 
-            if (autorQuery != null && !autorQuery.isEmpty()) {
-                googleQuery += "+inauthor:" + autorQuery.replace(" ", "+");
+            // --- CORREÇÃO: Constrói a query usando "intitle:" e "inauthor:" ---
+            String googleQuery = "";
+            if (query != null && !query.isEmpty()) {
+                googleQuery = "intitle:" + query; // O UriComponentsBuilder fará o encode
             }
+            
+            if (autorQuery != null && !autorQuery.isEmpty()) {
+                if (!googleQuery.isEmpty()) {
+                    googleQuery += " "; // Espaço é o separador
+                }
+                googleQuery += "inauthor:" + autorQuery; // O UriComponentsBuilder fará o encode
+            }
+            // --- FIM DA CORREÇÃO ---
             
             UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl("https://www.googleapis.com/books/v1/volumes")
                 .queryParam("q", googleQuery) 
@@ -157,18 +189,17 @@ public class MidiaService {
                 // Poster
                 posterUrl = bookInfo.path("imageLinks").path("thumbnail").asText(null);
 
-                // --- SINOPSE ADICIONADA ---
+                // Sinopse
                 sinopse = bookInfo.path("description").asText(null);
             }
         } catch (Exception e) {
             System.err.println("Erro ao buscar no Google Books API: " + e.getMessage());
         }
         
-        // --- RETORNO ATUALIZADO ---
         return new LivroApiResponseDTO(autor, genero, anoLancamento, posterUrl, sinopse);
     }
 
-    // --- BUSCA DE MÚSICAS (Deezer) - (Sem alteração) ---
+    // --- BUSCA DE MÚSICAS (Deezer) ---
     public MusicaApiResponseDTO buscarDetalhesMusica(String query, String artistaQuery) {
         String artista = "N/A";
         String album = "N/A";
@@ -207,7 +238,6 @@ public class MidiaService {
 
 
     // --- Métodos Auxiliares (getUsuarioLogado, salvarAvaliacao) ---
-    // (Sem alteração)
     private Usuario getUsuarioLogado(String email) {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
@@ -225,48 +255,56 @@ public class MidiaService {
     }
 
     // --- MÉTODOS DE SALVAR (CREATE) ---
-    // (Sem alteração em salvarFilme, salvarSerie, salvarMusica)
+    
     @Transactional
     public Filme salvarFilme(FilmeDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Filme filme = new Filme();
         filme.setNome(dto.getNome());
         filme.setCadastradoPor(usuario);
-        if (dto.getDiretor() == null || dto.getDiretor().isEmpty() || dto.getAnoLancamento() == 0) {
-            TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "filme"); 
-            if (dto.getDiretor() == null || dto.getDiretor().isEmpty()) {
-                filme.setDiretor(tmdbData.getDiretor());
-            }
-            if (dto.getAnoLancamento() == 0) {
-                filme.setAnoLancamento(tmdbData.getAnoLancamento());
-            }
-            filme.setPosterUrl(tmdbData.getPosterUrl());
-            filme.setSinopse(tmdbData.getSinopse());
-        }
+
+        // 1. Sempre busca da API para sinopse e poster
+        TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "filme"); 
+        filme.setPosterUrl(tmdbData.getPosterUrl());
+        filme.setSinopse(tmdbData.getSinopse());
+
+        // 2. Prioriza os dados manuais do usuário (se existirem)
         if (dto.getDiretor() != null && !dto.getDiretor().isEmpty()) {
             filme.setDiretor(dto.getDiretor());
+        } else {
+            filme.setDiretor(tmdbData.getDiretor()); // Usa o da API se manual estiver vazio
         }
+        
         if (dto.getAnoLancamento() != 0) {
             filme.setAnoLancamento(dto.getAnoLancamento());
+        } else {
+            filme.setAnoLancamento(tmdbData.getAnoLancamento()); // Usa o da API se manual for 0
         }
+        
         Filme filmeSalvo = filmeRepository.save(filme);
         salvarAvaliacao(usuario.getId(), filmeSalvo.getId(), dto.getNota(), dto.getComentario());
         return filmeSalvo;
     }
+
     @Transactional
     public Serie salvarSerie(SerieDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Serie serie = new Serie();
         serie.setNome(dto.getNome());
         serie.setCadastradoPor(usuario);
-        if (dto.getGenero() == null || dto.getGenero().isEmpty()) {
-            TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "serie");
-            serie.setPosterUrl(tmdbData.getPosterUrl());
-            serie.setSinopse(tmdbData.getSinopse());
-            serie.setGenero(tmdbData.getGenero());
-        } else {
+
+        // 1. Sempre busca da API para sinopse e poster
+        TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "serie");
+        serie.setPosterUrl(tmdbData.getPosterUrl());
+        serie.setSinopse(tmdbData.getSinopse());
+
+        // 2. Prioriza os dados manuais do usuário (se existirem)
+        if (dto.getGenero() != null && !dto.getGenero().isEmpty()) {
             serie.setGenero(dto.getGenero());
+        } else {
+            serie.setGenero(tmdbData.getGenero()); // Usa o da API se manual estiver vazio
         }
+        
         Serie serieSalva = serieRepository.save(serie);
         salvarAvaliacao(usuario.getId(), serieSalva.getId(), dto.getNota(), dto.getComentario());
         return serieSalva;
@@ -305,7 +343,6 @@ public class MidiaService {
         return musicaSalva;
     }
     
-    // --- MÉTODO salvarLivro ATUALIZADO ---
     @Transactional
     public Livro salvarLivro(LivroDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
@@ -327,8 +364,8 @@ public class MidiaService {
             livro.setGenero(booksData.getGenero());
         }
         
-        // --- SALVA A SINOPSE E O POSTER ---
-        livro.setSinopse(booksData.getSinopse()); // <-- LINHA ADICIONADA
+        // SALVA A SINOPSE E O POSTER
+        livro.setSinopse(booksData.getSinopse()); 
         livro.setPosterUrl(booksData.getPosterUrl());
         
         Livro livroSalvo = livroRepository.save(livro); 
@@ -337,7 +374,6 @@ public class MidiaService {
     }
 
     // --- MÉTODOS DE LEITURA (GET) ---
-    // (Sem alteração)
     public List<Midia> listarMidiasPorUsuario(String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         return midiaRepository.findByCadastradoPor(usuario);
@@ -347,8 +383,7 @@ public class MidiaService {
                 .orElseThrow(() -> new RuntimeException("Mídia não encontrada."));
     }
 
-    // --- MÉTODO DE DELETE (Usa a Stored Procedure) ---
-    // (Sem alteração)
+    // --- MÉTODO DE DELETE ---
     @Transactional
     public void deletarMidia(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
@@ -364,7 +399,6 @@ public class MidiaService {
     }
 
     // --- MÉTODOS DE ATUALIZAÇÃO (PUT) ---
-    // (Sem alteração)
     private Midia verificarPosse(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Midia midia = getMidiaPorId(midiaId);
