@@ -5,30 +5,28 @@ spring:
   # --- 1. Configuração do MySQL (JPA) ---
   datasource:
     url: jdbc:mysql://localhost:3306/myzone_db?createDatabaseIfNotExist=true
-    username: myzone_app_user
-    password: QWERqwer132
+    username: myzone_app_user 
+    password: QWERqwer132     
     
   jpa:
     properties:
       hibernate:
-        # Isso diz ao Hibernate como "falar" o dialeto SQL do MySQL
         dialect: org.hibernate.dialect.MySQLDialect
-    
-    # Isso faz o Hibernate criar/atualizar as tabelas no banco
-    # baseado nas suas classes @Entity
     hibernate:
-      ddl-auto: update
-    # (Opcional) Mostra o SQL no console, ótimo para debug
+      ddl-auto: update 
     show-sql: true
     
-  # --- 2. Configuração do MongoDB (com indentação correta) ---
-  # (Note que 'data' está no mesmo nível de 'jpa' e 'datasource')
+  # --- 2. Configuração do MongoDB ---
   data:
     mongodb:
-      # "myzone_mongo_db" será o nome do seu novo banco
       uri: mongodb://localhost:27017/myzone_mongo_db
 
-# --- 3. Chave da API (Sem indentação, nível raiz) ---
+# --- 3. Chaves de API ---
 tmdb:
   api:
-    key: "8540f532b05e225bb1803f9941d43982"
+    key: "8540f532b05e225bb1803f9941d43982" # (A tua chave TMDb)
+
+google:
+  books:
+    api:
+      key: "AIzaSyD0CfHYT5r4mVlR_8C28nSbUuk4uv4vDRc" # (A tua chave Google Books)

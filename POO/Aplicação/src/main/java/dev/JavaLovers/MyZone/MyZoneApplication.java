@@ -11,13 +11,11 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 // Diz ao Spring ONDE procurar por cada tipo de repositório
 @EnableJpaRepositories(
     basePackages = "dev.JavaLovers.MyZone.repository", 
-    // --- ADICIONE AS CHAVES AQUI ---
     excludeFilters = { @Filter(type = FilterType.ASSIGNABLE_TYPE, 
                               classes = dev.JavaLovers.MyZone.repository.AvaliacaoRepository.class) }
 )
 @EnableMongoRepositories(
     basePackages = "dev.JavaLovers.MyZone.repository",
-    // --- E ADICIONE AS CHAVES AQUI ---
     includeFilters = { @Filter(type = FilterType.ASSIGNABLE_TYPE, 
                               classes = dev.JavaLovers.MyZone.repository.AvaliacaoRepository.class) }
 )
