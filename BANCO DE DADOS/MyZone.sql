@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     email VARCHAR(255),
     nome VARCHAR(255),
     senha VARCHAR(255),
-    foto_url VARCHAR(255), -- Coluna adicionada para foto
+    foto_url VARCHAR(255),
     PRIMARY KEY (id)
 );
 
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS livro (
 CREATE TABLE IF NOT EXISTS musica (
     album VARCHAR(255),
     artista VARCHAR(255),
-    ano_estreia INT, -- <-- CAMPO ATUALIZADO (era data_estreia DATE)
+    ano_estreia INT,
     id BIGINT NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES midia(id) ON DELETE CASCADE
@@ -186,7 +186,7 @@ CREATE OR REPLACE VIEW VW_Usuarios_Publicos AS
 SELECT
     id,
     nome,
-    data_nascimento -- (nome da coluna SQL)
+    data_nascimento
 FROM usuario;
 
 -- VIEW 2: Vista Unificada de Mídias
@@ -197,7 +197,7 @@ SELECT
     m.id,
     m.nome,
     m.sinopse,
-    m.poster_url,      -- (nome da coluna SQL)
+    m.poster_url,  
     u.nome AS cadastrado_por,
     CASE
         WHEN f.id IS NOT NULL THEN 'FILME'
@@ -207,13 +207,13 @@ SELECT
         ELSE 'MIDIA'
     END AS tipo,
     f.diretor,
-    f.ano_lancamento,  -- (nome da coluna SQL)
+    f.ano_lancamento,
     s.genero AS genero_serie,
     l.autor,
     l.genero AS genero_livro,
     mu.artista,
     mu.album,
-    mu.ano_estreia     -- <-- CAMPO ATUALIZADO
+    mu.ano_estreia
 FROM midia m
 JOIN usuario u ON m.usuario_id = u.id
 LEFT JOIN filme f ON m.id = f.id
@@ -271,7 +271,7 @@ BEGIN
         DELETE FROM musica WHERE id = p_midia_id;
         DELETE FROM livro WHERE id = p_midia_id;
         
-        -- 4. Finalmente, apaga da tabela "pai"
+        -- 4.apaga da tabela "pai"
         DELETE FROM midia WHERE id = p_midia_id;
         
         COMMIT;
@@ -293,7 +293,7 @@ DELIMITER ;
 -- deve usar. Deve ser executado manualmente uma vez por um
 -- utilizador com privilégios (como 'root').
 
-/* -- DESCOMENTE PARA EXECUTAR UMA VEZ
+/* --EXECUTAR UMA VEZ
 CREATE USER 'myzone_app_user'@'localhost' IDENTIFIED BY 'QWERqwer132';
 GRANT SELECT, INSERT, UPDATE, DELETE ON myzone_db.* TO 'myzone_app_user'@'localhost';
 GRANT EXECUTE ON PROCEDURE myzone_db.SP_DeletarMidia TO 'myzone_app_user'@'localhost';
