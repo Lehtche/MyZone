@@ -50,8 +50,20 @@
                 <main class="feed">
                     <section id="tela-atualizacoes">
                         <div class="feed-header">
-                          <h2>Atualizações Recentes</h2>
+                          <h2>Feed</h2>
                           <button id="btn-abrir-tipo-midia" class="btn-add-midia-plus">+</button>
+                          <style>
+                            .btn-add-midia-plus {
+                                font-size: 24px;
+                                width: 36px;
+                                height: 36px;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                padding: 0;
+                            }
+                          </style>
                         </div>
                         <div class="category-header"><span>FILMES</span></div>
                         <div class="updates-grid" id="feed-filme"></div>
@@ -90,7 +102,7 @@
         </div>
     </div>
     <div id="modal-apagar-conta" class="modal-overlay escondido"><div class="modal-content"><button id="btn-fechar-modal-apagar" class="btn-fechar-modal">X</button><div class="modal-body-center"><h2>Apagar Conta</h2><p>Tem certeza que quer apagar sua conta? Esta ação não pode ser desfeita.</p><button class="btn-auth btn-danger" id="btn-confirmar-apagar">Confirmar</button></div></div></div>
-    <div id="modal-tipo-midia" class="modal-overlay escondido"><div class="tipo-midia-window"> <div class="tipo-midia-header-bar"> <span>Tipo de Mídia</span><button id="btn-fechar-tipo-midia" class="btn-fechar-popup"></button> </div><div class="tipo-midia-content"> <button class="btn-tipo-midia" data-tipo="filme">Filmes</button><button class="btn-tipo-midia" data-tipo="serie">Series</button><button class="btn-tipo-midia" data-tipo="musica">Música</button><button class="btn-tipo-midia" data-tipo="livro">Livros</button> <button class="btn-tipo-midia nova-categoria-btn" data-tipo="nova">Nova categoria</button></div></div></div>
+    <div id="modal-tipo-midia" class="modal-overlay escondido"><div class="tipo-midia-window"> <div class="tipo-midia-header-bar"> <span>Tipo de Mídia</span><button id="btn-fechar-tipo-midia" class="btn-fechar-popup"></button> </div><div class="tipo-midia-content"> <button class="btn-tipo-midia" data-tipo="filme">Filmes</button><button class="btn-tipo-midia" data-tipo="serie">Series</button><button class="btn-tipo-midia" data-tipo="musica">Música</button><button class="btn-tipo-midia" data-tipo="livro">Livros</button></div></div></div>
 
     <div id="modal-add-midia" class="modal-overlay escondido"><div class="add-midia-window"> <div class="add-midia-header-bar"> <span id="add-midia-title">🎵 Nova música</span><button id="btn-fechar-add-midia" class="btn-fechar-popup"></button> </div><div class="add-midia-content"> <form class="add-midia-form"><div class="form-main">
         
