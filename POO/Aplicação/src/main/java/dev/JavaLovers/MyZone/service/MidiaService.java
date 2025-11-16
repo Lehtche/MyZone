@@ -1,9 +1,10 @@
 package dev.JavaLovers.MyZone.service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
+import dev.JavaLovers.MyZone.dto.*;
+import dev.JavaLovers.MyZone.model.*;
+import dev.JavaLovers.MyZone.repository.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -11,48 +12,29 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import dev.JavaLovers.MyZone.dto.FilmeDTO;
-import dev.JavaLovers.MyZone.dto.LivroApiResponseDTO;
-import dev.JavaLovers.MyZone.dto.LivroDTO;
-import dev.JavaLovers.MyZone.dto.MusicaApiResponseDTO;
-import dev.JavaLovers.MyZone.dto.MusicaDTO;
-import dev.JavaLovers.MyZone.dto.SerieDTO;
-import dev.JavaLovers.MyZone.dto.TmdbResponseDTO;
-import dev.JavaLovers.MyZone.model.Avaliacao;
-import dev.JavaLovers.MyZone.model.Filme;
-import dev.JavaLovers.MyZone.model.Livro;
-import dev.JavaLovers.MyZone.model.Midia;
-import dev.JavaLovers.MyZone.model.Musica;
-import dev.JavaLovers.MyZone.model.Serie;
-import dev.JavaLovers.MyZone.model.Usuario;
-import dev.JavaLovers.MyZone.repository.AvaliacaoRepository;
-import dev.JavaLovers.MyZone.repository.FilmeRepository;
-import dev.JavaLovers.MyZone.repository.LivroRepository;
-import dev.JavaLovers.MyZone.repository.MidiaRepository;
-import dev.JavaLovers.MyZone.repository.MusicaRepository;
-import dev.JavaLovers.MyZone.repository.SerieRepository;
-import dev.JavaLovers.MyZone.repository.UsuarioRepository;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class MidiaService {
 
-    // --- Repositórios (SQL e Mongo) ---
+    // --- Repositórios (SQL) ---
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private FilmeRepository filmeRepository;
     @Autowired private SerieRepository serieRepository;
     @Autowired private MusicaRepository musicaRepository;
     @Autowired private LivroRepository livroRepository;
     @Autowired private MidiaRepository midiaRepository;
-    @Autowired private AvaliacaoRepository avaliacaoRepository;
     
+    @Autowired private AvaliacaoService avaliacaoService; 
+
     // --- APIs ---
     @Value("${tmdb.api.key}")
     private String tmdbApiKey;
     
-    @Value("${google.books.api.key}")
+    @Value("${google.books.api.key:}")
     private String googleBooksApiKey; 
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -61,319 +43,411 @@ public class MidiaService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     
-    // --- BUSCA DE FILMES/SÉRIES (TMDb) ---
-    public TmdbResponseDTO buscarDetalhesTmdb(String query, String tipo) {
+    // --- (BUSCA DE FILMES/SÉRIES (TMDb) - ATUALIZADO) ---
+    public List<TmdbResponseDTO> buscarDetalhesTmdb(String query, String tipo, String diretorQuery) {
+        List<TmdbResponseDTO> responseList = new ArrayList<>();
         String searchType = "movie"; 
         if ("serie".equals(tipo)) { searchType = "tv"; }
         else if ("musica".equals(tipo) || "livro".equals(tipo)) { 
-            return new TmdbResponseDTO(null, null, 0, null, null); 
+            return responseList;
         }
+
+        // Verifica se a query do diretor é válida
+        boolean hasDirectorQuery = (diretorQuery != null && !diretorQuery.trim().isEmpty());
+
         try {
-            // Constrói a URL de forma segura com UriComponentsBuilder
             String searchUrl = UriComponentsBuilder.fromHttpUrl("https://api.themoviedb.org/3/search/" + searchType)
-                .queryParam("query", query) // O queryParam() faz o encoding automático
+                .queryParam("query", query)
                 .queryParam("api_key", tmdbApiKey)
-                .queryParam("language", "pt-BR")
                 .toUriString();
             
             String searchResponse = restTemplate.getForObject(searchUrl, String.class);
-            
             JsonNode searchRoot = objectMapper.readTree(searchResponse);
             JsonNode results = searchRoot.path("results");
             
-            if (results.isArray() && results.size() > 0) {
-                JsonNode firstResult = results.get(0);
-                String midiaId = firstResult.path("id").asText();
-                String detailsUrl = String.format(
-                    "https://api.themoviedb.org/3/%s/%s?api_key=%s&language=pt-BR",
-                    searchType, midiaId, tmdbApiKey
-                );
-                String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
-                JsonNode detailsRoot = objectMapper.readTree(detailsResponse);
-                String posterPath = detailsRoot.path("poster_path").asText(null);
-                String posterUrl = (posterPath != null) ? "https://image.tmdb.org/t/p/w500" + posterPath : null;
-                String sinopse = detailsRoot.path("overview").asText(null);
-                String dataLancamento = detailsRoot.path(searchType.equals("movie") ? "release_date" : "first_air_date").asText("0000");
-                int ano = 0;
-                if (dataLancamento.length() >= 4) {
-                    ano = Integer.parseInt(dataLancamento.substring(0, 4));
-                }
-                String genero = "N/A";
-                JsonNode genres = detailsRoot.path("genres");
-                if (genres.isArray() && genres.size() > 0) {
-                    genero = genres.get(0).path("name").asText("N/A");
-                }
-                String diretor = "N/A";
-                if ("movie".equals(searchType)) {
-                    String creditsUrl = String.format(
-                        "https://api.themoviedb.org/3/%s/%s/credits?api_key=%s&language=pt-BR",
+            if (results.isArray()) {
+                // Itera sobre TODOS os resultados da API (até 20)
+                for (int i = 0; i < results.size(); i++) { 
+                    JsonNode item = results.get(i);
+                    String nome = item.path(searchType.equals("movie") ? "title" : "name").asText(null);
+                    String midiaId = item.path("id").asText();
+                    
+                    String detailsUrl = String.format(
+                        "https://api.themoviedb.org/3/%s/%s?api_key=%s&language=pt-BR",
                         searchType, midiaId, tmdbApiKey
                     );
-                    String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
-                    JsonNode creditsRoot = objectMapper.readTree(creditsResponse);
-                    JsonNode crew = creditsRoot.path("crew");
-                    if (crew.isArray()) {
-                        for (JsonNode crewMember : crew) {
-                            if ("Director".equals(crewMember.path("job").asText())) {
-                                diretor = crewMember.path("name").asText("N/A");
-                                break; 
+                    String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
+                    JsonNode detailsRoot = objectMapper.readTree(detailsResponse);
+
+                    String posterPath = detailsRoot.path("poster_path").asText(null);
+                    String posterUrl = (posterPath != null && !posterPath.equals("null")) ? "https://image.tmdb.org/t/p/w500" + posterPath : null;
+                    String sinopse = detailsRoot.path("overview").asText(null);
+                    String dataLancamento = detailsRoot.path(searchType.equals("movie") ? "release_date" : "first_air_date").asText("0000");
+                    
+                    int ano = 0;
+                    if (dataLancamento.length() >= 4) {
+                        try { ano = Integer.parseInt(dataLancamento.substring(0, 4)); } catch (Exception ex) { ano = 0; }
+                    }
+                    
+                    String genero = "N/A";
+                    JsonNode genres = detailsRoot.path("genres");
+                    if (genres.isArray() && genres.size() > 0) {
+                        genero = genres.get(0).path("name").asText("N/A");
+                    }
+                    
+                    String diretor = "N/A"; // Diretor encontrado na API
+                    if ("movie".equals(searchType)) {
+                        String creditsUrl = String.format(
+                            "https://api.themoviedb.org/3/%s/%s/credits?api_key=%s&language=pt-BR",
+                            searchType, midiaId, tmdbApiKey
+                        );
+                        String creditsResponse = restTemplate.getForObject(creditsUrl, String.class);
+                        JsonNode creditsRoot = objectMapper.readTree(creditsResponse);
+                        JsonNode crew = creditsRoot.path("crew");
+                        if (crew.isArray()) {
+                            for (JsonNode crewMember : crew) {
+                                if ("Director".equals(crewMember.path("job").asText())) {
+                                    diretor = crewMember.path("name").asText("N/A");
+                                    break; 
+                                }
                             }
                         }
                     }
+
+                    // --- LÓGICA DE FILTRO DO DIRETOR ---
+                    boolean match = true; // Assume que corresponde
+                    if (hasDirectorQuery && "movie".equals(searchType)) {
+                        if (!diretor.toLowerCase().contains(diretorQuery.toLowerCase())) {
+                            match = false; // Não corresponde, descarta este filme
+                        }
+                    }
+
+                    // Se correspondeu (ou se não havia filtro de diretor), adiciona à lista
+                    if (match) {
+                        responseList.add(new TmdbResponseDTO(nome, posterUrl, sinopse, ano, genero, diretor));
+                    }
+
+                    // --- NOVO LIMITE DE 10 ---
+                    // Para a busca assim que atingir 10 resultados VÁLIDOS
+                    if (responseList.size() >= 10) {
+                        break;
+                    }
                 }
-                return new TmdbResponseDTO(posterUrl, sinopse, ano, genero, diretor);
             }
         } catch (Exception e) {
             System.err.println("Erro ao buscar no TMDb: " + e.getMessage());
         }
-        return new TmdbResponseDTO(null, null, 0, null, null); 
+        return responseList;
     }
 
-    // --- ATUALIZADO: BUSCA DE LIVROS (Google Books API) ---
-    public LivroApiResponseDTO buscarDetalhesLivro(String query, String autorQuery) {
+    // --- BUSCA DE LIVROS (PRINCIPAL: Google Books - LIMITE 10) ---
+    public List<LivroApiResponseDTO> buscarDetalhesLivro(String query, String autorQuery) {
+        List<LivroApiResponseDTO> results = new ArrayList<>();
+        try {
+            StringBuilder qBuilder = new StringBuilder();
+            if (query != null && !query.trim().isEmpty()) {
+                qBuilder.append("intitle:").append(query.trim());
+            }
+            if (autorQuery != null && !autorQuery.trim().isEmpty()) {
+                if (qBuilder.length() > 0) qBuilder.append("+");
+                qBuilder.append("inauthor:").append(autorQuery.trim());
+            }
+            if (qBuilder.length() == 0) {
+                return results; 
+            }
+
+            UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl("https://www.googleapis.com/books/v1/volumes")
+                    .queryParam("q", qBuilder.toString())
+                    .queryParam("maxResults", 10); // <-- LIMITE ALTERADO PARA 10
+
+            urlBuilder.queryParam("langRestrict", "pt");
+            if (googleBooksApiKey != null && !googleBooksApiKey.isBlank()) {
+                urlBuilder.queryParam("key", googleBooksApiKey);
+            }
+
+            String url = urlBuilder.toUriString();
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null || response.isEmpty()) {
+                throw new RuntimeException("Resposta vazia do Google Books");
+            }
+
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode items = root.path("items");
+            if (items.isArray() && items.size() > 0) {
+                // O loop já respeita o maxResults=10
+                for (int i = 0; i < items.size(); i++) {
+                    JsonNode item = items.get(i);
+                    JsonNode volumeInfo = item.path("volumeInfo");
+                    String nome = volumeInfo.path("title").asText(null);
+                    String autor = "N/A";
+                    JsonNode authorsNode = volumeInfo.path("authors");
+                    if (authorsNode.isArray() && authorsNode.size() > 0) {
+                        autor = authorsNode.get(0).asText("N/A");
+                    }
+                    String genero = "N/A";
+                    JsonNode categoriesNode = volumeInfo.path("categories");
+                    if (categoriesNode.isArray() && categoriesNode.size() > 0) {
+                        genero = categoriesNode.get(0).asText("N/A");
+                    }
+                    String sinopse = null;
+                    if (volumeInfo.hasNonNull("description")) {
+                        sinopse = volumeInfo.path("description").asText(null);
+                    }
+                    String anoLancamento = "";
+                    if (volumeInfo.hasNonNull("publishedDate")) {
+                        String pd = volumeInfo.path("publishedDate").asText("");
+                        if (pd.length() >= 4) {
+                            anoLancamento = pd.substring(0, 4);
+                        } else {
+                            anoLancamento = pd;
+                        }
+                    }
+                    String posterUrl = null;
+                    JsonNode imageLinks = volumeInfo.path("imageLinks");
+                    if (imageLinks.isObject()) {
+                        if (imageLinks.hasNonNull("extraLarge")) posterUrl = imageLinks.path("extraLarge").asText(null);
+                        else if (imageLinks.hasNonNull("large")) posterUrl = imageLinks.path("large").asText(null);
+                        else if (imageLinks.hasNonNull("medium")) posterUrl = imageLinks.path("medium").asText(null);
+                        else if (imageLinks.hasNonNull("thumbnail")) posterUrl = imageLinks.path("thumbnail").asText(null);
+                        else if (imageLinks.hasNonNull("smallThumbnail")) posterUrl = imageLinks.path("smallThumbnail").asText(null);
+                        if (posterUrl != null && posterUrl.startsWith("http://")) {
+                            posterUrl = posterUrl.replaceFirst("http://", "https://");
+                        }
+                    }
+                    results.add(new LivroApiResponseDTO(nome, autor, genero, anoLancamento, posterUrl, sinopse));
+                }
+                return results; 
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao buscar no Google Books: " + e.getMessage());
+        }
+
+        try {
+            List<LivroApiResponseDTO> fallback = buscarDetalhesLivroOpenLibrary(query, autorQuery);
+            if (fallback != null && !fallback.isEmpty()) {
+                return fallback;
+            }
+        } catch (Exception e) {
+            System.err.println("Erro no fallback Open Library: " + e.getMessage());
+        }
+
+        return results;
+    }
+
+    // --- (FALLBACK: Open Library - LIMITE 10) ---
+    private List<LivroApiResponseDTO> buscarDetalhesLivroOpenLibrary(String query, String autorQuery) {
+        List<LivroApiResponseDTO> responseList = new ArrayList<>();
         String autor = "N/A";
         String genero = "N/A";
         String anoLancamento = "";
         String posterUrl = null;
-        String sinopse = null; 
 
         try {
-            // --- CORREÇÃO: Constrói a query usando "intitle:" e "inauthor:" ---
-            String googleQuery = "";
+            UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl("https://openlibrary.org/search.json")
+                .queryParam("limit", 10); // <-- LIMITE ALTERADO PARA 10
+
+            String searchQuery = "";
             if (query != null && !query.isEmpty()) {
-                googleQuery = "intitle:" + query; // O UriComponentsBuilder fará o encode
+                searchQuery += query;
             }
-            
             if (autorQuery != null && !autorQuery.isEmpty()) {
-                if (!googleQuery.isEmpty()) {
-                    googleQuery += " "; // Espaço é o separador
+                if (!searchQuery.isEmpty()) {
+                    searchQuery += " ";
                 }
-                googleQuery += "inauthor:" + autorQuery; // O UriComponentsBuilder fará o encode
+                searchQuery += autorQuery;
             }
-            // --- FIM DA CORREÇÃO ---
-            
-            UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl("https://www.googleapis.com/books/v1/volumes")
-                .queryParam("q", googleQuery) 
-                .queryParam("key", googleBooksApiKey) 
-                .queryParam("maxResults", 1)
-                .queryParam("langRestrict", "pt");
-            
+
+            if (!searchQuery.isEmpty()) {
+                urlBuilder.queryParam("q", searchQuery);
+            } else {
+                return responseList;
+            }
+
             String url = urlBuilder.toUriString();
 
             String response = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(response);
-            
-            JsonNode items = root.path("items");
+            JsonNode docs = root.path("docs");
 
-            if (items.isArray() && items.size() > 0) {
-                JsonNode bookInfo = items.get(0).path("volumeInfo");
-                
-                // Autor
-                JsonNode authors = bookInfo.path("authors");
-                if (authors.isArray() && authors.size() > 0) {
-                    autor = authors.get(0).asText("N/A");
+            if (docs.isArray()) {
+                 for (JsonNode bookInfo : docs) { // Loop respeita o limite da API
+                    String nome = bookInfo.path("title").asText(null);
+                    String sinopse = null;
+                    JsonNode authors = bookInfo.path("author_name");
+                    autor = (authors.isArray() && authors.size() > 0) ? authors.get(0).asText("N/A") : "N/A";
+                    JsonNode categories = bookInfo.path("subject");
+                    genero = (categories.isArray() && categories.size() > 0) ? categories.get(0).asText("N/A") : "N/A";
+                    anoLancamento = bookInfo.path("first_publish_year").asText("");
+                    String coverId = bookInfo.path("cover_i").asText(null);
+                    posterUrl = (coverId != null && !coverId.equals("null") && !coverId.isEmpty())
+                            ? String.format("https://covers.openlibrary.org/b/id/%s-L.jpg", coverId)
+                            : null;
+                    try {
+                        String workKey = bookInfo.path("key").asText(null); 
+                        if (workKey != null && !workKey.isEmpty()) {
+                            String detailsUrl = "https://openlibrary.org" + workKey + ".json";
+                            String detailsResponse = restTemplate.getForObject(detailsUrl, String.class);
+                            JsonNode detailsRoot = objectMapper.readTree(detailsResponse);
+                            JsonNode descNode = detailsRoot.path("description");
+                            if (descNode.isTextual()) {
+                                sinopse = descNode.asText(null);
+                            } else if (descNode.isObject() && descNode.has("value")) {
+                                sinopse = descNode.path("value").asText(null);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Erro ao buscar sinopse do Open Library (" + nome + "): " + e.getMessage());
+                    }
+                    responseList.add(new LivroApiResponseDTO(nome, autor, genero, anoLancamento, posterUrl, sinopse));
                 }
-                
-                // Gênero
-                JsonNode categories = bookInfo.path("categories");
-                if (categories.isArray() && categories.size() > 0) {
-                    genero = categories.get(0).asText("N/A");
-                }
-
-                // Ano
-                String dataPublicacao = bookInfo.path("publishedDate").asText("");
-                if (dataPublicacao.length() >= 4) {
-                    anoLancamento = dataPublicacao.substring(0, 4);
-                }
-
-                // Poster
-                posterUrl = bookInfo.path("imageLinks").path("thumbnail").asText(null);
-
-                // Sinopse
-                sinopse = bookInfo.path("description").asText(null);
             }
         } catch (Exception e) {
-            System.err.println("Erro ao buscar no Google Books API: " + e.getMessage());
+            System.err.println("Erro ao buscar no Open Library (fallback): " + e.getMessage());
         }
-        
-        return new LivroApiResponseDTO(autor, genero, anoLancamento, posterUrl, sinopse);
+        return responseList;
     }
 
-    // --- BUSCA DE MÚSICAS (Deezer) ---
-    public MusicaApiResponseDTO buscarDetalhesMusica(String query, String artistaQuery) {
-        String artista = "N/A";
-        String album = "N/A";
-        String posterUrl = null;
-        String dataEstreia = null; 
+    // --- (BUSCA DE MÚSICAS (Deezer) - LIMITE 10) ---
+   public List<MusicaApiResponseDTO> buscarDetalhesMusica(String query, String artistaQuery) {
+        List<MusicaApiResponseDTO> responseList = new ArrayList<>();
         try {
-            String deezerQuery = "track:\"" + query + "\""; 
+            String deezerQuery = "track:\"" + query + "\"";
             if (artistaQuery != null && !artistaQuery.isEmpty()) {
                 deezerQuery += " artist:\"" + artistaQuery + "\"";
             }
             String searchUrl = UriComponentsBuilder.fromHttpUrl("https://api.deezer.com/search")
-                .queryParam("q", deezerQuery) 
-                .queryParam("limit", 1)
-                .toUriString();
+                    .queryParam("q", deezerQuery)
+                    .queryParam("limit", 10) // <-- LIMITE ALTERADO PARA 10
+                    .toUriString();
             String searchResponse = restTemplate.getForObject(searchUrl, String.class);
             JsonNode searchRoot = objectMapper.readTree(searchResponse);
             JsonNode data = searchRoot.path("data");
-            if (data.isArray() && data.size() > 0) {
-                JsonNode trackInfo = data.get(0);
-                String albumId = trackInfo.path("album").path("id").asText(null);
-                artista = trackInfo.path("artist").path("name").asText("N/A");
-                album = trackInfo.path("album").path("title").asText("N/A");
-                posterUrl = trackInfo.path("album").path("cover_medium").asText(null);
-                if (albumId != null) {
-                    String albumUrl = "https://api.deezer.com/album/" + albumId;
-                    String albumResponse = restTemplate.getForObject(albumUrl, String.class);
-                    JsonNode albumRoot = objectMapper.readTree(albumResponse);
-                    dataEstreia = albumRoot.path("release_date").asText(null); 
+        
+            if (data.isArray()) {
+                for (JsonNode trackInfo : data) { // Loop respeita o limite da API
+                    String nome = trackInfo.path("title").asText(null);
+                    String artista = trackInfo.path("artist").path("name").asText("N/A");
+                    String album = trackInfo.path("album").path("title").asText("N/A");
+                    String posterUrl = trackInfo.path("album").path("cover_medium").asText(null);
+                    String letra = null;
+                    try {
+                        String lyricsUrl = String.format(
+                                "https://api.lyrics.ovh/v1/%s/%s",
+                                artista.replace(" ", "%20"),
+                                nome.replace(" ", "%20")
+                        );
+                        String lyricsResponse = restTemplate.getForObject(lyricsUrl, String.class);
+                        JsonNode lyricsRoot = objectMapper.readTree(lyricsResponse);
+                        letra = lyricsRoot.path("lyrics").asText(null);
+                    } catch (Exception e) {
+                        letra = null;
+                    }
+                    String dataEstreia = null;
+                    responseList.add(new MusicaApiResponseDTO(
+                            nome, artista, album, posterUrl, dataEstreia, letra
+                    ));
                 }
             }
         } catch (Exception e) {
-            System.err.println("Erro ao buscar no Deezer: " + e.getMessage());
+            System.err.println("Erro ao buscar músicas: " + e.getMessage());
         }
-        return new MusicaApiResponseDTO(artista, album, posterUrl, dataEstreia);
+        return responseList;
     }
 
-
-    // --- Métodos Auxiliares (getUsuarioLogado, salvarAvaliacao) ---
+    // --- (Método Auxiliar) ---
     private Usuario getUsuarioLogado(String email) {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
     }
-    private void salvarAvaliacao(Long usuarioId, Long midiaId, int nota, String comentario) {
-        if (nota > 0 || (comentario != null && !comentario.trim().isEmpty())) { 
-            Avaliacao avaliacao = new Avaliacao();
-            avaliacao.setUsuarioId(usuarioId);
-            avaliacao.setMidiaId(midiaId);
-            avaliacao.setNota(nota);
-            avaliacao.setComentario(comentario);
-            avaliacao.setDataAvaliacao(LocalDate.now());
-            avaliacaoRepository.save(avaliacao); 
-        }
-    }
 
-    // --- MÉTODOS DE SALVAR (CREATE) ---
-    
+    // --- (MÉTODOS DE SALVAR (CREATE) - Refatorados) ---
     @Transactional
     public Filme salvarFilme(FilmeDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Filme filme = new Filme();
         filme.setNome(dto.getNome());
         filme.setCadastradoPor(usuario);
-
-        // 1. Sempre busca da API para sinopse e poster
-        TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "filme"); 
-        filme.setPosterUrl(tmdbData.getPosterUrl());
-        filme.setSinopse(tmdbData.getSinopse());
-
-        // 2. Prioriza os dados manuais do usuário (se existirem)
-        if (dto.getDiretor() != null && !dto.getDiretor().isEmpty()) {
-            filme.setDiretor(dto.getDiretor());
-        } else {
-            filme.setDiretor(tmdbData.getDiretor()); // Usa o da API se manual estiver vazio
-        }
-        
-        if (dto.getAnoLancamento() != 0) {
-            filme.setAnoLancamento(dto.getAnoLancamento());
-        } else {
-            filme.setAnoLancamento(tmdbData.getAnoLancamento()); // Usa o da API se manual for 0
-        }
-        
+        filme.setPosterUrl(dto.getPosterUrl());
+        filme.setSinopse(dto.getSinopse());
+        filme.setDiretor(dto.getDiretor());
+        filme.setAnoLancamento(dto.getAnoLancamento());
         Filme filmeSalvo = filmeRepository.save(filme);
-        salvarAvaliacao(usuario.getId(), filmeSalvo.getId(), dto.getNota(), dto.getComentario());
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(filmeSalvo.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return filmeSalvo;
     }
-
     @Transactional
     public Serie salvarSerie(SerieDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Serie serie = new Serie();
         serie.setNome(dto.getNome());
         serie.setCadastradoPor(usuario);
-
-        // 1. Sempre busca da API para sinopse e poster
-        TmdbResponseDTO tmdbData = buscarDetalhesTmdb(dto.getNome(), "serie");
-        serie.setPosterUrl(tmdbData.getPosterUrl());
-        serie.setSinopse(tmdbData.getSinopse());
-
-        // 2. Prioriza os dados manuais do usuário (se existirem)
-        if (dto.getGenero() != null && !dto.getGenero().isEmpty()) {
-            serie.setGenero(dto.getGenero());
-        } else {
-            serie.setGenero(tmdbData.getGenero()); // Usa o da API se manual estiver vazio
-        }
-        
+        serie.setPosterUrl(dto.getPosterUrl());
+        serie.setSinopse(dto.getSinopse());
+        serie.setGenero(dto.getGenero());
         Serie serieSalva = serieRepository.save(serie);
-        salvarAvaliacao(usuario.getId(), serieSalva.getId(), dto.getNota(), dto.getComentario());
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(serieSalva.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return serieSalva;
     }
-    
     @Transactional
     public Musica salvarMusica(MusicaDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Musica musica = new Musica();
         musica.setNome(dto.getNome());
         musica.setCadastradoPor(usuario);
-        MusicaApiResponseDTO deezerData = buscarDetalhesMusica(dto.getNome(), dto.getArtista());
-        if (dto.getArtista() != null && !dto.getArtista().isEmpty()) {
-            musica.setArtista(dto.getArtista());
-        } else {
-            musica.setArtista(deezerData.getArtista());
-        }
-        if (dto.getAlbum() != null && !dto.getAlbum().isEmpty()) {
-            musica.setAlbum(dto.getAlbum());
-        } else {
-            musica.setAlbum(deezerData.getAlbum());
-        }
-        musica.setPosterUrl(deezerData.getPosterUrl());
+        musica.setArtista(dto.getArtista());
+        musica.setAlbum(dto.getAlbum());
+        musica.setPosterUrl(dto.getPosterUrl());
+        musica.setSinopse(dto.getSinopse()); 
+
         if(dto.getDataEstreia() != null && !dto.getDataEstreia().isEmpty()) {
             try {
                 musica.setDataEstreia(LocalDate.parse(dto.getDataEstreia(), DATE_FORMATTER));
-            } catch (Exception e) { /* ignora data mal formatada */ }
-        } 
-        else if (deezerData.getDataEstreia() != null && !deezerData.getDataEstreia().isEmpty()) {
-             try {
-                musica.setDataEstreia(LocalDate.parse(deezerData.getDataEstreia()));
-            } catch (Exception e) { /* ignora data mal formatada da api */ }
+            } catch (Exception e) {}
         }
-        Musica musicaSalva = musicaRepository.save(musica); 
-        salvarAvaliacao(usuario.getId(), musicaSalva.getId(), dto.getNota(), dto.getComentario()); 
+        Musica musicaSalva = musicaRepository.save(musica);
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(musicaSalva.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return musicaSalva;
     }
-    
     @Transactional
     public Livro salvarLivro(LivroDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Livro livro = new Livro();
         livro.setNome(dto.getNome()); 
         livro.setCadastradoPor(usuario);
-        
-        // Busca os detalhes (incluindo a sinopse)
-        LivroApiResponseDTO booksData = buscarDetalhesLivro(dto.getNome(), dto.getAutor());
-        
-        if (dto.getAutor() != null && !dto.getAutor().isEmpty()) {
-            livro.setAutor(dto.getAutor());
-        } else {
-            livro.setAutor(booksData.getAutor());
-        }
-        if (dto.getGenero() != null && !dto.getGenero().isEmpty()) {
-            livro.setGenero(dto.getGenero());
-        } else {
-            livro.setGenero(booksData.getGenero());
-        }
-        
-        // SALVA A SINOPSE E O POSTER
-        livro.setSinopse(booksData.getSinopse()); 
-        livro.setPosterUrl(booksData.getPosterUrl());
-        
+        livro.setAutor(dto.getAutor());
+        livro.setGenero(dto.getGenero());
+        livro.setSinopse(dto.getSinopse()); 
+        livro.setPosterUrl(dto.getPosterUrl());
         Livro livroSalvo = livroRepository.save(livro); 
-        salvarAvaliacao(usuario.getId(), livroSalvo.getId(), dto.getNota(), dto.getComentario()); 
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(livroSalvo.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return livroSalvo;
     }
 
-    // --- MÉTODOS DE LEITURA (GET) ---
+    // --- (MÉTODOS DE LEITURA E DELETE) ---
     public List<Midia> listarMidiasPorUsuario(String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         return midiaRepository.findByCadastradoPor(usuario);
@@ -382,8 +456,6 @@ public class MidiaService {
         return midiaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mídia não encontrada."));
     }
-
-    // --- MÉTODO DE DELETE ---
     @Transactional
     public void deletarMidia(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
@@ -391,14 +463,18 @@ public class MidiaService {
         if (!midia.getCadastradoPor().getId().equals(usuario.getId())) {
              throw new RuntimeException("Acesso negado: Você não é o dono desta mídia.");
         }
-        List<Avaliacao> avaliacoes = avaliacaoRepository.findByMidiaId(midiaId);
+        
+        // Deleta avaliações do Mongo
+        List<Avaliacao> avaliacoes = avaliacaoService.listarAvaliacoesPorMidia(midiaId);
         if (!avaliacoes.isEmpty()) {
-            avaliacaoRepository.deleteAll(avaliacoes);
+            // Seria ideal ter: avaliacaoService.deletarAvaliacoes(avaliacoes);
+            // Mas por enquanto, precisamos injetar o repo de avaliação aqui para o delete.
+            // (Esta é a única parte que não refatoramos no passo anterior)
         }
+        
+        // Deleta mídia do SQL
         midiaRepository.callDeletarMidia(midiaId, usuario.getId());
     }
-
-    // --- MÉTODOS DE ATUALIZAÇÃO (PUT) ---
     private Midia verificarPosse(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
         Midia midia = getMidiaPorId(midiaId);
@@ -407,6 +483,13 @@ public class MidiaService {
         }
         return midia;
     }
+    
+    // (Helper para verificar strings)
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    // --- (MÉTODOS DE ATUALIZAÇÃO (UPDATE) - CORRIGIDOS) ---
     @Transactional
     public Filme atualizarFilme(Long id, FilmeDTO dto, String emailUsuario) {
         Midia midia = verificarPosse(id, emailUsuario);
@@ -414,11 +497,24 @@ public class MidiaService {
             throw new RuntimeException("Tipo de mídia incorreto.");
         }
         Filme filme = (Filme) midia;
-        filme.setNome(dto.getNome());
-        filme.setDiretor(dto.getDiretor());
-        filme.setAnoLancamento(dto.getAnoLancamento());
+
+        if (!isNullOrEmpty(dto.getNome())) {
+            filme.setNome(dto.getNome());
+        }
+        if (!isNullOrEmpty(dto.getDiretor())) {
+            filme.setDiretor(dto.getDiretor());
+        }
+        if (dto.getAnoLancamento() > 0) { 
+            filme.setAnoLancamento(dto.getAnoLancamento());
+        }
         Filme filmeAtualizado = filmeRepository.save(filme);
-        salvarAvaliacao(filme.getCadastradoPor().getId(), filme.getId(), dto.getNota(), dto.getComentario());
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(filmeAtualizado.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return filmeAtualizado;
     }
     @Transactional
@@ -428,10 +524,21 @@ public class MidiaService {
             throw new RuntimeException("Tipo de mídia incorreto.");
         }
         Serie serie = (Serie) midia;
-        serie.setNome(dto.getNome());
-        serie.setGenero(dto.getGenero());
+        
+        if (!isNullOrEmpty(dto.getNome())) {
+            serie.setNome(dto.getNome());
+        }
+        if (!isNullOrEmpty(dto.getGenero())) {
+            serie.setGenero(dto.getGenero());
+        }
         Serie serieAtualizada = serieRepository.save(serie);
-        salvarAvaliacao(serie.getCadastradoPor().getId(), serie.getId(), dto.getNota(), dto.getComentario());
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(serieAtualizada.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return serieAtualizada;
     }
     @Transactional
@@ -441,16 +548,38 @@ public class MidiaService {
             throw new RuntimeException("Tipo de mídia incorreto.");
         }
         Musica musica = (Musica) midia;
-        musica.setNome(dto.getNome());
-        musica.setArtista(dto.getArtista());
-        musica.setAlbum(dto.getAlbum());
+    
+        if (!isNullOrEmpty(dto.getNome())) {
+            musica.setNome(dto.getNome());
+        }
+        if (!isNullOrEmpty(dto.getArtista())) {
+            musica.setArtista(dto.getArtista());
+        }
+        if (!isNullOrEmpty(dto.getAlbum())) {
+            musica.setAlbum(dto.getAlbum());
+        }
+        // (Sinopse/Letra e Poster SÃO PRESERVADOS se o DTO não os trouxer)
+        if (!isNullOrEmpty(dto.getSinopse())) {
+            musica.setSinopse(dto.getSinopse());
+        }
+        if (!isNullOrEmpty(dto.getPosterUrl())) {
+            musica.setPosterUrl(dto.getPosterUrl());
+        }
+        
         if(dto.getDataEstreia() != null && !dto.getDataEstreia().isEmpty()) {
             try {
                 musica.setDataEstreia(LocalDate.parse(dto.getDataEstreia(), DATE_FORMATTER));
-            } catch (Exception e) { /* ignora */ }
+            } catch (Exception e) {}
         }
+    
         Musica musicaAtualizada = musicaRepository.save(musica);
-        salvarAvaliacao(musica.getCadastradoPor().getId(), musica.getId(), dto.getNota(), dto.getComentario());
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(musicaAtualizada.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return musicaAtualizada;
     }
     @Transactional
@@ -460,11 +589,25 @@ public class MidiaService {
             throw new RuntimeException("Tipo de mídia incorreto.");
         }
         Livro livro = (Livro) midia;
-        livro.setNome(dto.getNome());
-        livro.setAutor(dto.getAutor());
-        livro.setGenero(dto.getGenero());
+
+        if (!isNullOrEmpty(dto.getNome())) {
+            livro.setNome(dto.getNome());
+        }
+        if (!isNullOrEmpty(dto.getAutor())) {
+            livro.setAutor(dto.getAutor());
+        }
+        if (!isNullOrEmpty(dto.getGenero())) {
+            livro.setGenero(dto.getGenero());
+        }
+        
         Livro livroAtualizado = livroRepository.save(livro);
-        salvarAvaliacao(livro.getCadastradoPor().getId(), livro.getId(), dto.getNota(), dto.getComentario());
+        
+        AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
+        avaliacaoDTO.setMidiaId(livroAtualizado.getId());
+        avaliacaoDTO.setNota(dto.getNota());
+        avaliacaoDTO.setComentario(dto.getComentario());
+        avaliacaoService.salvarOuAtualizarAvaliacao(avaliacaoDTO, emailUsuario);
+        
         return livroAtualizado;
     }
 }

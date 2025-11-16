@@ -20,7 +20,6 @@
 
     <section id="tela-app" class="tela-container escondido">
         <div class="window-frame">
-            
             <header class="header-bar">
                 <div class="header-left-items">
                     <div class="logo" id="btn-logo-home">My Zone</div>
@@ -34,9 +33,7 @@
                     <span id="btn-abrir-config" class="header-icon-btn icon-config">⚙️</span>
                 </div>
             </header>
-
             <div class="main-content">
-                
                 <aside class="sidebar">
                     <div class="profile-card shiny-box">
                         <button class="btn-menu-perfil" id="btn-menu-perfil">...</button>
@@ -45,20 +42,17 @@
                                 <li id="btn-atualizar-foto">Atualizar foto</li>
                             </ul>
                         </div>
-
                         <div class="profile-pic-bg" id="profile-pic-bg" style="background-image: url('https://i.imgur.com/I5b6nJg.png');"></div>
                         <div class="profile-user-info" id="profile-user-info">Utilizador</div>
                         <div class="profile-bio-box">Meu catálogo de mídias.</div>
                     </div>
                 </aside>
-                
                 <main class="feed">
                     <section id="tela-atualizacoes">
                         <div class="feed-header">
                           <h2>Atualizações Recentes</h2>
                           <button id="btn-abrir-tipo-midia" class="btn-add-midia-plus">+</button>
                         </div>
-    
                         <div class="category-header"><span>FILMES</span></div>
                         <div class="updates-grid" id="feed-filme"></div>
                         <div class="category-header"><span>SERIES</span></div>
@@ -68,7 +62,6 @@
                         <div class="category-header"><span>LIVROS</span></div>
                         <div class="updates-grid" id="feed-livro"></div>
                     </section>
-                    
                     <section id="tela-configuracoes" class="escondido">
                         <h2 class="config-title"><span class="icon-config">⚙️</span> CONFIGURAÇÕES</h2>
                         <div class="config-item"><span class="config-label">Modo Escuro</span><label class="toggle-switch"><input type="checkbox" id="toggle-dark-mode"><span class="slider round"></span></label></div>
@@ -96,12 +89,82 @@
             </div>
         </div>
     </div>
-    
     <div id="modal-apagar-conta" class="modal-overlay escondido"><div class="modal-content"><button id="btn-fechar-modal-apagar" class="btn-fechar-modal">X</button><div class="modal-body-center"><h2>Apagar Conta</h2><p>Tem certeza que quer apagar sua conta? Esta ação não pode ser desfeita.</p><button class="btn-auth btn-danger" id="btn-confirmar-apagar">Confirmar</button></div></div></div>
     <div id="modal-tipo-midia" class="modal-overlay escondido"><div class="tipo-midia-window"> <div class="tipo-midia-header-bar"> <span>Tipo de Mídia</span><button id="btn-fechar-tipo-midia" class="btn-fechar-popup"></button> </div><div class="tipo-midia-content"> <button class="btn-tipo-midia" data-tipo="filme">Filmes</button><button class="btn-tipo-midia" data-tipo="serie">Series</button><button class="btn-tipo-midia" data-tipo="musica">Música</button><button class="btn-tipo-midia" data-tipo="livro">Livros</button> <button class="btn-tipo-midia nova-categoria-btn" data-tipo="nova">Nova categoria</button></div></div></div>
-    <div id="modal-add-midia" class="modal-overlay escondido"><div class="add-midia-window"> <div class="add-midia-header-bar"> <span id="add-midia-title">🎵 Nova música</span><button id="btn-fechar-add-midia" class="btn-fechar-popup"></button> </div><div class="add-midia-content"> <form class="add-midia-form"><div class="form-main"><div class="form-fields"><div class="form-group campo-comum"><label for="midia-nome">Nome:</label><input type="text" id="midia-nome"></div><div class="form-group" data-tipo="musica"><label for="midia-artista">Artista:</label><input type="text" id="midia-artista"></div><div class="form-group" data-tipo="musica"><label for="midia-album">Álbum:</label><input type="text" id="midia-album"></div><div class="form-group" data-tipo="musica"><label for="midia-data-estreia">Data de estreia:</label><input type="text" id="midia-data-estreia" placeholder="DD/MM/AAAA"></div><div class="form-group" data-tipo="filme"><label for="midia-diretor">Diretor:</label><input type="text" id="midia-diretor"></div><div class="form-group" data-tipo="filme"><label for="midia-ano-lancamento">Ano Lançamento:</label><input type="number" id="midia-ano-lancamento" placeholder="Ex: 2024"></div><div class="form-group" data-tipo="serie"><label for="midia-genero-serie">Gênero:</label><input type="text" id="midia-genero-serie" placeholder="Ex: Drama"></div><div class="form-group" data-tipo="livro"><label for="midia-autor">Autor/Estúdio:</label><input type="text" id="midia-autor"></div><div class="form-group" data-tipo="livro"><label for="midia-genero-livro">Gênero:</label><input type="text" id="midia-genero-livro" placeholder="Ex: Shounen"></div></div><div class="form-image-upload"><label for="midia-imagem-input" class="upload-box"><span>Adicionar imagem</span><span class="upload-icon">↑</span></label><input type="file" id="midia-imagem-input" class="escondido"></div></div><div class="form-group campo-comum"><label for="midia-comentarios">Comentários:</label><textarea id="midia-comentarios" placeholder="O que você achou?"></textarea></div><div class="form-group-rating campo-comum"><label>Avaliação:</label><div class="star-rating"><span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span><span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span><span class="star" data-value="5">☆</span></div><input type="hidden" id="midia-nota" value="0"></div><button type="button" class="btn-auth" id="btn-salvar-midia">Salvar Mídia</button></form></div></div></div>
+
+    <div id="modal-add-midia" class="modal-overlay escondido"><div class="add-midia-window"> <div class="add-midia-header-bar"> <span id="add-midia-title">🎵 Nova música</span><button id="btn-fechar-add-midia" class="btn-fechar-popup"></button> </div><div class="add-midia-content"> <form class="add-midia-form"><div class="form-main">
+        
+        <div class="form-fields">
+        
+            <div class="form-group campo-comum">
+                <label for="midia-nome">Nome:</label>
+                <input type="text" id="midia-nome">
+            </div>
+
+            <div class="form-group" data-tipo="musica"><label for="midia-artista">Artista:</label><input type="text" id="midia-artista"></div>
+            <div class="form-group" data-tipo="musica"><label for="midia-album">Álbum:</label><input type="text" id="midia-album"></div>
+            <div class="form-group" data-tipo="musica"><label for="midia-data-estreia">Data de estreia:</label><input type="text" id="midia-data-estreia" placeholder="DD/MM/AAAA"></div>
+            <div class="form-group" data-tipo="filme"><label for="midia-diretor">Diretor:</label><input type="text" id="midia-diretor"></div>
+            <div class="form-group" data-tipo="filme"><label for="midia-ano-lancamento">Ano Lançamento:</label><input type="number" id="midia-ano-lancamento" placeholder="Ex: 2024"></div>
+            <div class="form-group" data-tipo="serie"><label for="midia-genero-serie">Gênero:</label><input type="text" id="midia-genero-serie" placeholder="Ex: Drama"></div>
+            <div class="form-group" data-tipo="livro"><label for="midia-autor">Autor/Estúdio:</label><input type="text" id="midia-autor"></div>
+            <div class="form-group" data-tipo="livro"><label for="midia-genero-livro">Gênero:</label><input type="text" id="midia-genero-livro" placeholder="Ex: Shounen"></div>
+        </div>
+
+        <div id="api-search-results" class="search-results-container escondido"></div>
+    
+    </div>
+    
+    <div class="form-group campo-comum"><label for="midia-comentarios">Comentários:</label><textarea id="midia-comentarios" placeholder="O que você achou?"></textarea></div>
+    <div class="form-group-rating campo-comum"><label>Avaliação:</label><div class="star-rating"><span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span><span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span><span class="star" data-value="5">☆</span></div><input type="hidden" id="midia-nota" value="0"></div>
+    <button type="button" class="btn-auth" id="btn-salvar-midia">Salvar Mídia</button>
+    </form></div></div></div>
     <div id="modal-detalhes-midia" class="modal-overlay escondido"><div class="detalhes-midia-window"><div class="detalhes-midia-header-bar"><span id="detalhe-titulo">Carregando...</span><button id="btn-fechar-detalhes-midia" class="btn-fechar-popup"></button></div><div class="detalhes-midia-content"><div class="detalhes-midia-main"><img id="detalhe-poster" src="https://via.placeholder.com/150x225/004a99/FFFFFF?text=MyZone" alt="Poster" class="detalhe-poster"><div class="detalhe-info"><p id="detalhe-sinopse">Carregando sinopse...</p><hr><div id="detalhe-info-extra"></div><button class="btn-auth" id="btn-editar-midia" style="background-color: #0056b3; border-color: #001a4d; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;"> Editar </button><button class="btn-auth btn-danger btn-deletar-midia" id="btn-deletar-midia"> Deletar Mídia </button></div></div><div class="detalhe-avaliacoes"><h3>Avaliações (dos usuários)</h3><div id="detalhe-avaliacoes-lista"><p>Carregando avaliações...</p></div></div></div></div></div>
     
     <script src="script.js"></script>
+
+    <div id="modal-add-avaliacao" class="modal-overlay escondido">
+    <div class="modal-content" style="max-width: 450px;">
+        <button id="btn-fechar-modal-avaliacao" class="btn-fechar-modal">X</button>
+        <div class="auth-form-container modal-form">
+            <h2 id="modal-avaliacao-titulo">Minha Avaliação</h2>
+            
+            <div class="form-group-rating campo-comum" style="margin-top: 25px;">
+                <label>Avaliação:</label>
+                <div class="star-rating" id="avaliacao-stars">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <input type="hidden" id="avaliacao-nota" value="0">
+            </div>
+
+            <div class="form-group campo-comum">
+                <label for="avaliacao-comentario">Comentários:</label>
+                <textarea id="avaliacao-comentario" placeholder="O que você achou?"></textarea>
+            </div>
+            
+            <button type="button" class="btn-auth" id="btn-salvar-avaliacao">Salvar Avaliação</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-detalhes-midia" class="modal-overlay escondido">
+    <div class="detalhe-info">
+        <p id="detalhe-sinopse">Carregando sinopse...</p>
+        <hr>
+        <div id="detalhe-info-extra"></div>
+
+        <button class="btn-auth" id="btn-abrir-avaliacao" style="background-color: #007bff; border-color: #007bff; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;">
+            Adicionar/Editar Avaliação
+        </button>
+        
+        <button class="btn-auth" id="btn-editar-midia" style="background-color: #0056b3; border-color: #001a4d; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;"> Editar Mídia </button>
+        
+        <button class="btn-auth btn-danger btn-deletar-midia" id="btn-deletar-midia"> Deletar Mídia </button>
+    </div>
+    </div>
 </body>
 </html>

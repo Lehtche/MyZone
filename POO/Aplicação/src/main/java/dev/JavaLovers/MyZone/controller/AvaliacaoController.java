@@ -1,6 +1,7 @@
 package dev.JavaLovers.MyZone.controller;
 
 import dev.JavaLovers.MyZone.model.Avaliacao;
+import dev.JavaLovers.MyZone.dto.AvaliacaoDTO;
 import dev.JavaLovers.MyZone.service.AvaliacaoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,5 +35,18 @@ public class AvaliacaoController {
         }
         List<Avaliacao> avaliacoes = avaliacaoService.listarAvaliacoesPorMidia(midiaId);
         return ResponseEntity.ok(avaliacoes);
+    }
+    @PostMapping("/salvar")
+    public ResponseEntity<Avaliacao> salvarAvaliacao(@RequestBody AvaliacaoDTO dto, Principal principal) {
+        if (principal == null) { 
+            return ResponseEntity.status(401).build(); 
+        }
+        
+        try {
+            Avaliacao avaliacaoSalva = avaliacaoService.salvarOuAtualizarAvaliacao(dto, principal.getName());
+            return ResponseEntity.ok(avaliacaoSalva);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

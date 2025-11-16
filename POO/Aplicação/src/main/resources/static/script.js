@@ -5,7 +5,9 @@ window.addEventListener('DOMContentLoaded', () => {
     let tipoMidiaAtual = null;
     let usuarioLogado = null; 
     let midiaAtualEmDetalhe = null; 
+    let avaliacaoAtualDoUsuario = null; 
     let idMidiaEmEdicao = null; 
+    let apiDataSelecionada = null; 
 
     // ===============================================
     // --- 1. PEGAR TODOS OS ELEMENTOS
@@ -60,7 +62,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const addMidiaTitle = document.getElementById('add-midia-title');
     const camposDinamicos = document.querySelectorAll('.add-midia-form .form-group[data-tipo]');
     const addMidiaForm = document.querySelector('.add-midia-form');
-    const stars = document.querySelectorAll('.star-rating .star');
+    const stars = document.querySelectorAll('.star-rating .star'); // Estrelas do modal ADICIONAR
     const midiaNotaInput = document.getElementById('midia-nota');
     const midiaDataEstreiaInput = document.getElementById('midia-data-estreia');
     
@@ -74,6 +76,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const midiaAutorInput = document.getElementById('midia-autor');
     const midiaGeneroLivroInput = document.getElementById('midia-genero-livro'); 
 
+    const apiSearchResults = document.getElementById('api-search-results');
+
     const modalDetalhesMidia = document.getElementById('modal-detalhes-midia');
     const btnFecharDetalhesMidia = document.getElementById('btn-fechar-detalhes-midia');
     const btnDeletarMidia = document.getElementById('btn-deletar-midia');
@@ -84,24 +88,45 @@ window.addEventListener('DOMContentLoaded', () => {
     const detalheInfoExtra = document.getElementById('detalhe-info-extra');
     const detalheAvaliacoesLista = document.getElementById('detalhe-avaliacoes-lista');
 
+    // === ELEMENTOS DO NOVO MODAL DE AVALIAÇÃO ===
+    const modalAddAvaliacao = document.getElementById('modal-add-avaliacao');
+    const btnFecharModalAvaliacao = document.getElementById('btn-fechar-modal-avaliacao');
+    const btnSalvarAvaliacao = document.getElementById('btn-salvar-avaliacao');
+    const btnAbrirAvaliacao = document.getElementById('btn-abrir-avaliacao');
+    const avaliacaoStars = document.querySelectorAll('#avaliacao-stars .star'); // Estrelas do modal AVALIAR
+    const avaliacaoNotaInput = document.getElementById('avaliacao-nota');
+    const avaliacaoComentarioInput = document.getElementById('avaliacao-comentario');
+    const modalAvaliacaoTitulo = document.getElementById('modal-avaliacao-titulo');
+
 
     // ===============================================
     // --- 2. FUNÇÕES DE AJUDA (Helpers)
     // ===============================================
     
+    function debounce(func, delay) {
+        let timeoutId;
+        return function(...args) {
+            const context = this;
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            timeoutId = setTimeout(() => {
+                func.apply(context, args); 
+            }, delay);
+        };
+    }
+
     function formatarDataParaAPI(data) {
         if (!data) return null;
         const partes = data.split('/');
         if (partes.length !== 3 || partes[2].length < 4) { return null; }
         return `${partes[2]}-${partes[1]}-${partes[0]}`;
     }
-
     function formatarDataParaForm(data) {
         if (!data) return "";
         try {
-            // Tenta tratar datas como "2023" ou "2023-01-15"
-            if (data.length === 4 && !isNaN(data)) { // Se for só o ano
-                return `01/01/${data}`; // Retorna um formato de data válido
+            if (data.length === 4 && !isNaN(data)) { 
+                return `01/01/${data}`;
             }
             const dataObj = new Date(data + 'T00:00:00'); 
             const dia = String(dataObj.getUTCDate()).padStart(2, '0');
@@ -113,7 +138,6 @@ window.addEventListener('DOMContentLoaded', () => {
             return "";
         }
     }
-
     function aplicarMascaraData(e) {
         let valor = e.target.value.replace(/\D/g, ''); 
         if (valor.length > 4) {
@@ -123,7 +147,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         e.target.value = valor;
     }
-
     function atualizarImagensDePerfil(fotoUrl) {
         const urlPadraoHeader = "https://i.imgur.com/4z1ZJ8H.png";
         const urlPadraoFundo = "https://i.imgur.com/I5b6nJg.png";
@@ -136,7 +159,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ... (renderizarMidias, carregarFeedUsuario, preencherModalDetalhes, abrirModalDetalhes - Sem alteração) ...
     function renderizarMidias(midias, avaliacoes) {
         const containers = {
             FILME: feedFilmeContainer,
@@ -152,8 +174,10 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         const mapaAvaliacoes = new Map();
         avaliacoes.forEach(av => {
-            if (!mapaAvaliacoes.has(av.midiaId) || new Date(av.dataAvaliacao) > new Date(mapaAvaliacoes.get(av.midiaId).dataAvaliacao)) {
-                mapaAvaliacoes.set(av.midiaId, av);
+            if (av.usuarioId === usuarioLogado.id) {
+                if (!mapaAvaliacoes.has(av.midiaId) || new Date(av.dataAvaliacao) > new Date(mapaAvaliacoes.get(av.midiaId).dataAvaliacao)) {
+                    mapaAvaliacoes.set(av.midiaId, av);
+                }
             }
         });
         midias.forEach(midia => {
@@ -208,41 +232,68 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    
     function preencherModalDetalhes(midia, avaliacoes) {
         midiaAtualEmDetalhe = midia; 
+        avaliacaoAtualDoUsuario = null; 
+        
         detalheTitulo.textContent = midia.nome;
         detalhePoster.src = midia.posterUrl || `https://via.placeholder.com/200x300/004a99/FFFFFF?text=${midia.nome}`;
         detalheSinopse.textContent = midia.sinopse || "Esta mídia não tem sinopse.";
+        detalheSinopse.classList.remove('letra-de-musica');
+        
         let infoExtraHtml = '';
         if (midia.tipo === 'FILME') {
             infoExtraHtml = `<strong>Diretor:</strong> ${midia.diretor || 'N/A'}<br><strong>Ano:</strong> ${midia.anoLancamento || 'N/A'}`;
         } else if (midia.tipo === 'SERIE') {
             infoExtraHtml = `<strong>Gênero:</strong> ${midia.genero || 'N/A'}`;
         } else if (midia.tipo === 'MUSICA') {
+            detalheSinopse.classList.add('letra-de-musica');
             infoExtraHtml = `<strong>Artista:</strong> ${midia.artista || 'N/A'}<br><strong>Álbum:</strong> ${midia.album || 'N/A'}<br><strong>Estreia:</strong> ${formatarDataParaForm(midia.dataEstreia) || 'N/A'}`;
         } else if (midia.tipo === 'LIVRO') {
             infoExtraHtml = `<strong>Autor:</strong> ${midia.autor || 'N/A'}<br><strong>Gênero:</strong> ${midia.genero || 'N/A'}`;
         }
         detalheInfoExtra.innerHTML = infoExtraHtml;
+        
         detalheAvaliacoesLista.innerHTML = '';
-        if (avaliacoes.length > 0) {
-            avaliacoes.sort((a, b) => new Date(b.dataAvaliacao) - new Date(a.dataAvaliacao));
-            avaliacoes.forEach(av => {
+        
+        const minhaAvaliacao = avaliacoes.find(av => av.usuarioId === usuarioLogado.id);
+        
+        if (minhaAvaliacao) {
+            avaliacaoAtualDoUsuario = minhaAvaliacao; 
+            const avaliacaoCard = document.createElement('div');
+            avaliacaoCard.className = 'avaliacao-item';
+            avaliacaoCard.style.border = "2px solid #0056b3"; 
+            avaliacaoCard.innerHTML = `
+                <div class="avaliacao-item-header">
+                    <span class="avaliacao-item-usuario" style="color: #0056b3;">Minha Avaliação (${formatarDataParaForm(minhaAvaliacao.dataAvaliacao)})</span>
+                    <span class="avaliacao-item-nota">${'★'.repeat(minhaAvaliacao.nota)}${'☆'.repeat(5 - minhaAvaliacao.nota)}</span>
+                </div>
+                <p class="avaliacao-item-comentario">${minhaAvaliacao.comentario || '<i>Sem comentário</i>'}</p>
+            `;
+            detalheAvaliacoesLista.appendChild(avaliacaoCard);
+        }
+
+        avaliacoes.forEach(av => {
+            if (av.usuarioId !== usuarioLogado.id) { 
                 const avaliacaoCard = document.createElement('div');
                 avaliacaoCard.className = 'avaliacao-item';
                 avaliacaoCard.innerHTML = `
                     <div class="avaliacao-item-header">
-                        <span class="avaliacao-item-usuario">Minha Avaliação (${formatarDataParaForm(av.dataAvaliacao)})</span>
+                        <span class="avaliacao-item-usuario">Avaliação (ID Utilizador: ${av.usuarioId})</span>
                         <span class="avaliacao-item-nota">${'★'.repeat(av.nota)}${'☆'.repeat(5 - av.nota)}</span>
                     </div>
                     <p class="avaliacao-item-comentario">${av.comentario || '<i>Sem comentário</i>'}</p>
                 `;
                 detalheAvaliacoesLista.appendChild(avaliacaoCard);
-            });
-        } else {
+            }
+        });
+
+        if (detalheAvaliacoesLista.innerHTML === '') {
             detalheAvaliacoesLista.innerHTML = '<p>Nenhuma avaliação encontrada para esta mídia.</p>';
         }
     }
+
     async function abrirModalDetalhes(midiaId) {
         midiaAtualEmDetalhe = null;
         modalDetalhesMidia.classList.remove('escondido');
@@ -280,15 +331,12 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 3. LÓGICA DE NAVEGAÇÃO E API
     // ===============================================
 
-    // --- Navegação (Login / Cadastro)
+    // (Login, Cadastro, Navegação, Modais de Perfil/Apagar - Sem alteração)
     btnIrParaCadastro.addEventListener('click', () => { telaLogin.classList.add('escondido'); telaCadastro.classList.remove('escondido'); });
     btnIrParaLogin.addEventListener('click', () => { telaCadastro.classList.add('escondido'); telaLogin.classList.remove('escondido'); });
     if(cadNascimentoInput) { cadNascimentoInput.addEventListener('input', aplicarMascaraData); }
     if (midiaDataEstreiaInput) { midiaDataEstreiaInput.addEventListener('input', aplicarMascaraData); }
-
-    // --- API: Botão ENVIAR CADASTRO
     btnEnviarCadastro.addEventListener('click', () => {
-        // ... (lógica sem alteração) ...
         const email = cadEmailInput.value; const nome = cadNomeInput.value; const senha = cadSenhaInput.value;
         const senhaConfirmacao = cadConfirmaSenhaInput.value; const dataNascimentoInput = cadNascimentoInput.value;
         if (!email || !nome || !senha || !senhaConfirmacao || !dataNascimentoInput) { alert("Por favor, preencha todos os campos."); return; }
@@ -308,10 +356,7 @@ window.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => { console.error(error); alert(error.message); });
     });
-
-    // --- API: Botão ENTRAR (Login) ---
     btnEntrarApp.addEventListener('click', () => {
-        // ... (lógica sem alteração) ...
         const email = document.getElementById('login-email').value;
         const senha = document.getElementById('login-senha').value;
         if (email === "" || senha === "") { alert('Por favor, digite seu e-mail e senha.'); return; }
@@ -335,8 +380,6 @@ window.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => { alert(error.message); });
     });
-    
-    // --- Navegação (Dentro do App)
     function esconderTelasApp() {
         if(telaAtualizacoes) telaAtualizacoes.classList.add('escondido');
         if(telaConfiguracoes) telaConfiguracoes.classList.add('escondido');
@@ -344,15 +387,11 @@ window.addEventListener('DOMContentLoaded', () => {
     if(headerAvatarImg) { headerAvatarImg.addEventListener('click', () => { esconderTelasApp(); telaAtualizacoes.classList.remove('escondido'); carregarFeedUsuario(); }); }
     if(btnLogoHome) { btnLogoHome.addEventListener('click', () => { esconderTelasApp(); telaAtualizacoes.classList.remove('escondido'); carregarFeedUsuario(); }); }
     if(btnAbrirConfig) { btnAbrirConfig.addEventListener('click', () => { esconderTelasApp(); telaConfiguracoes.classList.remove('escondido'); }); }
-    
     document.addEventListener('click', (e) => {
         if(menuPerfil && !menuPerfil.contains(e.target) && e.target !== btnMenuPerfil) {
              menuPerfil.classList.add('escondido'); 
         }
     });
-
-    // --- Listeners de Abrir/Fechar Detalhes, Deletar, Editar ---
-    // ... (Sem alteração) ...
     [feedFilmeContainer, feedSerieContainer, feedMusicaContainer, feedLivroContainer].forEach(container => {
         if (container) {
             container.addEventListener('click', (e) => {
@@ -406,9 +445,20 @@ window.addEventListener('DOMContentLoaded', () => {
             modalDetalhesMidia.classList.add('escondido');
             const nomeBotao = document.querySelector(`.btn-tipo-midia[data-tipo="${tipo}"]`).textContent;
             abrirModalAddMidia(tipo, nomeBotao);
+            
+            // Preenche os dados da Mídia
             midiaNomeInput.value = midiaAtualEmDetalhe.nome || '';
-            midiaComentariosInput.value = '';
-            resetarEstrelas(); 
+            
+            // Preenche a avaliação (se houver)
+            if (avaliacaoAtualDoUsuario) {
+                midiaComentariosInput.value = avaliacaoAtualDoUsuario.comentario || '';
+                setStars(avaliacaoAtualDoUsuario.nota); 
+            } else {
+                midiaComentariosInput.value = '';
+                resetarEstrelas(); 
+            }
+            
+            // Preenche os campos específicos do tipo
             if (tipo === 'filme') {
                 midiaDiretorInput.value = midiaAtualEmDetalhe.diretor || '';
                 midiaAnoLancamentoInput.value = midiaAtualEmDetalhe.anoLancamento || '';
@@ -424,8 +474,6 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // --- LÓGICA DE PERFIL (REATIVADA) ---
     if(btnMenuPerfil) { 
         btnMenuPerfil.addEventListener('click', (e) => { 
             e.stopPropagation(); 
@@ -472,9 +520,6 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         }); 
     }
-
-    // --- Lógica (Configurações e Apagar Conta)
-    // ... (Sem alteração) ...
     if(togglePrivacyInput) {
         togglePrivacyInput.addEventListener('change', () => {
             if (togglePrivacyInput.checked) {
@@ -495,12 +540,13 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Lógica (Adicionar Mídia - Botão '+')
-    // ... (Sem alteração) ...
+    // --- Lógica (Adicionar Mídia - Botão '+') ---
+    
     if(btnAbrirTipoMidia) { 
         btnAbrirTipoMidia.addEventListener('click', () => { 
             idMidiaEmEdicao = null; 
             tipoMidiaAtual = null; 
+            apiDataSelecionada = null; 
             modalTipoMidia.classList.remove('escondido'); 
         }); 
     }
@@ -531,176 +577,304 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!idMidiaEmEdicao) {
             if(addMidiaForm) addMidiaForm.reset(); 
             resetarEstrelas(); 
+            apiDataSelecionada = null; 
         }
         
         modalAddMidia.classList.remove('escondido');
     }
+    
+    // Funções para estrelas do Modal ADICIONAR MÍDIA
     stars.forEach(star => {
         star.addEventListener('click', () => {
             const valor = star.dataset.value;
-            midiaNotaInput.value = valor;
-            stars.forEach(s => {
-                s.textContent = (s.dataset.value <= valor) ? '★' : '☆';
-            });
+            setStars(valor);
         });
     });
-    function resetarEstrelas() {
-        stars.forEach(s => s.textContent = '☆');
-        midiaNotaInput.value = "0";
+    function setStars(valor) {
+        midiaNotaInput.value = valor;
+        stars.forEach(s => {
+            s.textContent = (s.dataset.value <= valor) ? '★' : '☆';
+        });
     }
+    function resetarEstrelas() {
+        setStars(0);
+    }
+
     if(btnFecharAddMidia) { 
         btnFecharAddMidia.addEventListener('click', () => { 
             modalAddMidia.classList.add('escondido'); 
             idMidiaEmEdicao = null; 
             tipoMidiaAtual = null;
+            apiDataSelecionada = null; 
+            clearApiResults(); 
         }); 
     }
 
+    // ===============================================
+    // --- LÓGICA DO NOVO MODAL DE AVALIAÇÃO ---
+    // ===============================================
 
-    // --- ATUALIZADO: API: Auto-fill (Listeners separados e corrigidos) ---
+    avaliacaoStars.forEach(star => {
+        star.addEventListener('click', () => {
+            const valor = star.dataset.value;
+            setAvaliacaoStars(valor);
+        });
+    });
 
-    // Função genérica para limpar campos
-    function limparCamposAutoFill(tipo) {
-        if(idMidiaEmEdicao) return; // Não limpa se estiver editando
-        
-        if(tipo === 'filme' || tipo === 'serie') {
-            midiaDiretorInput.value = '';
-            midiaAnoLancamentoInput.value = '';
-            midiaGeneroSerieInput.value = '';
-        } else if (tipo === 'livro') {
-            // Não limpa o autor, pois ele pode ser o gatilho
-            // midiaAutorInput.value = midiaAutorInput.value || ''; 
-            midiaGeneroLivroInput.value = '';
-        } else if (tipo === 'musica') {
-            // Não limpa o artista, pois ele é o gatilho
-            // midiaArtistaInput.value = midiaArtistaInput.value || ''; 
-            midiaAlbumInput.value = '';
-            midiaDataEstreiaInput.value = '';
-        }
+    function setAvaliacaoStars(valor) {
+        avaliacaoNotaInput.value = valor;
+        avaliacaoStars.forEach(s => {
+            s.textContent = (s.dataset.value <= valor) ? '★' : '☆';
+        });
+    }
+
+    if (btnAbrirAvaliacao) {
+        btnAbrirAvaliacao.addEventListener('click', () => {
+            if (!midiaAtualEmDetalhe) return;
+            
+            modalAvaliacaoTitulo.textContent = `Avaliar: ${midiaAtualEmDetalhe.nome}`;
+            
+            if (avaliacaoAtualDoUsuario) {
+                setAvaliacaoStars(avaliacaoAtualDoUsuario.nota);
+                avaliacaoComentarioInput.value = avaliacaoAtualDoUsuario.comentario || '';
+            } else {
+                setAvaliacaoStars(0);
+                avaliacaoComentarioInput.value = '';
+            }
+            
+            modalAddAvaliacao.classList.remove('escondido');
+        });
     }
     
-    // Função de busca para Filmes e Séries
+    if (btnFecharModalAvaliacao) {
+        btnFecharModalAvaliacao.addEventListener('click', () => {
+            modalAddAvaliacao.classList.add('escondido');
+        });
+    }
+
+    if (btnSalvarAvaliacao) {
+        btnSalvarAvaliacao.addEventListener('click', () => {
+            if (!midiaAtualEmDetalhe) return;
+            
+            const payload = {
+                midiaId: midiaAtualEmDetalhe.id,
+                nota: parseInt(avaliacaoNotaInput.value, 10),
+                comentario: avaliacaoComentarioInput.value
+            };
+            
+            if (payload.nota === 0 && (payload.comentario === null || payload.comentario.trim() === '')) {
+                alert("Por favor, adicione uma nota ou um comentário.");
+                return;
+            }
+
+            fetch('/api/avaliacoes/salvar', {
+                method: 'POST', 
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (response.status === 401) { throw new Error('Sessão expirada.'); }
+                if (!response.ok) { throw new Error('Erro ao salvar avaliação.'); }
+                return response.json();
+            })
+            .then(avaliacaoSalva => {
+                alert('Avaliação salva com sucesso!');
+                modalAddAvaliacao.classList.add('escondido');
+                abrirModalDetalhes(midiaAtualEmDetalhe.id); 
+                carregarFeedUsuario();
+            })
+            .catch(error => {
+                console.error(error);
+                alert(error.message);
+            });
+        });
+    }
+
+    // ===============================================
+    // --- FUNÇÕES DA LISTA DE RESULTADOS (API)
+    // ===============================================
+
+    function clearApiResults() {
+        if(apiSearchResults) {
+            apiSearchResults.innerHTML = '';
+            apiSearchResults.classList.add('escondido');
+        }
+    }
+
+    function populateFormWithApiData(data) {
+        if (tipoMidiaAtual === 'filme') {
+            midiaDiretorInput.value = data.diretor || '';
+            midiaAnoLancamentoInput.value = data.anoLancamento || '';
+        } else if (tipoMidiaAtual === 'serie') {
+            midiaGeneroSerieInput.value = data.genero || '';
+        } else if (tipoMidiaAtual === 'livro') {
+            midiaAutorInput.value = data.autor || '';
+            midiaGeneroLivroInput.value = data.genero || '';
+        } else if (tipoMidiaAtual === 'musica') {
+            midiaArtistaInput.value = data.artista || '';
+            midiaAlbumInput.value = data.album || '';
+            midiaDataEstreiaInput.value = formatarDataParaForm(data.dataEstreia);
+        }
+    }
+
+    function displayApiResults(results) {
+        clearApiResults();
+        if (!results || results.length === 0) return;
+
+        apiSearchResults.classList.remove('escondido');
+        let hasValidResults = false;
+
+        results.forEach(item => {
+            if (!item.nome || item.nome === "N/A") {
+                return; 
+            }
+            hasValidResults = true;
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'search-result-item';
+            let nome, info, posterUrl;
+            
+            if (tipoMidiaAtual === 'filme' || tipoMidiaAtual === 'serie') {
+                nome = item.nome;
+                info = (item.diretor && item.diretor !== 'N/A') ? item.diretor : `Ano: ${item.anoLancamento || 'N/A'}`;
+                posterUrl = item.posterUrl;
+            } else if (tipoMidiaAtual === 'livro') {
+                nome = item.nome;
+                info = item.autor || 'Autor desconhecido';
+                posterUrl = item.posterUrl;
+            } else if (tipoMidiaAtual === 'musica') {
+                nome = item.nome;
+                info = item.artista || 'Artista desconhecido';
+                posterUrl = item.posterUrl;
+            }
+
+            const imgTag = posterUrl 
+                ? `<img src="${posterUrl}" alt="Poster">`
+                : `<img src="https://via.placeholder.com/40x60/0d3d82/FFFFFF?text=?" alt="Poster">`;
+
+            itemDiv.innerHTML = `
+                ${imgTag}
+                <div class="search-result-info">
+                    <span class="search-result-title">${nome}</span>
+                    <span class="search-result-info-sub">${info}</span>
+                </div>
+            `;
+            itemDiv.dataset.apiData = JSON.stringify(item);
+            apiSearchResults.appendChild(itemDiv);
+        });
+
+        if (!hasValidResults) {
+            clearApiResults();
+        }
+    }
+
+    if (apiSearchResults) {
+        apiSearchResults.addEventListener('click', (e) => {
+            const itemDiv = e.target.closest('.search-result-item');
+            if (!itemDiv) return;
+            const data = JSON.parse(itemDiv.dataset.apiData);
+            apiDataSelecionada = data; 
+            midiaNomeInput.value = data.nome;
+            populateFormWithApiData(data);
+            clearApiResults();
+        });
+    }
+
+    // === FUNÇÕES DE TRIGGER (API) ATUALIZADAS ===
+
     function triggerFilmeSerieAutoFill() {
         if (idMidiaEmEdicao) return; 
         const nome = midiaNomeInput.value;
-        if (nome.length < 2 || (tipoMidiaAtual !== 'filme' && tipoMidiaAtual !== 'serie')) {
+        const diretor = midiaDiretorInput.value; // <-- LÊ O DIRETOR
+        
+        if (nome.length < 2 && diretor.length < 2) { // <-- VERIFICA AMBOS
+            clearApiResults();
             return;
         }
-
-        limparCamposAutoFill(tipoMidiaAtual);
+        
         let url = `/api/tmdb/buscar?query=${nome}&tipo=${tipoMidiaAtual}`;
-
+        
+        if (diretor && diretor.length > 1) { // <-- ADICIONA DIRETOR À URL
+            url += `&diretor=${diretor}`;
+        }
+        
         fetch(url, { credentials: 'include' })
-            .then(response => response.ok ? response.json() : Promise.reject('Não encontrado'))
-            .then(data => {
-                if (tipoMidiaAtual === 'filme') {
-                    midiaDiretorInput.value = data.diretor || '';
-                    midiaAnoLancamentoInput.value = data.anoLancamento || '';
-                } else if (tipoMidiaAtual === 'serie') {
-                    midiaGeneroSerieInput.value = data.genero || '';
-                }
-            })
-            .catch(error => console.warn(error.message));
+            .then(response => response.ok ? response.json() : [])
+            .then(data => { displayApiResults(data); })
+            .catch(error => { console.warn(error.message); clearApiResults(); });
     }
-
-    // --- ATUALIZADO: Função de busca para Livros ---
     function triggerLivroAutoFill() {
         if (idMidiaEmEdicao) return;
         const nome = midiaNomeInput.value;
-        const autor = midiaAutorInput.value; // Pega o autor
-
-        // --- CORREÇÃO DE LÓGICA ---
-        // Só pesquise se PELO MENOS UM campo (nome ou autor) tiver texto
-        if (nome.length < 2 && autor.length < 2) return; 
-
-        limparCamposAutoFill(tipoMidiaAtual); 
-        
+        const autor = midiaAutorInput.value; 
+        if (nome.length < 2 && autor.length < 2) {
+            clearApiResults();
+            return;
+        } 
         let url = `/api/tmdb/buscar-livro?query=${nome}`;
-        if (autor) {
-            url += `&autor=${autor}`; // Adiciona o autor se ele existir
-        }
-        
+        if (autor) { url += `&autor=${autor}`; }
         fetch(url, { credentials: 'include' })
-            .then(response => response.ok ? response.json() : Promise.reject('Não encontrado'))
-            .then(data => {
-                // Só preenche o autor se o campo estiver vazio
-                if (!midiaAutorInput.value) {
-                    midiaAutorInput.value = data.autor || '';
-                }
-                midiaGeneroLivroInput.value = data.genero || '';
-            })
-            .catch(error => console.warn(error.message));
+            .then(response => response.ok ? response.json() : [])
+            .then(data => { displayApiResults(data); })
+            .catch(error => { console.warn(error.message); clearApiResults(); });
     }
-
-    // Função de busca para Músicas
     function triggerMusicaAutoFill() {
         if (idMidiaEmEdicao) return;
         const nome = midiaNomeInput.value;
-        const artista = midiaArtistaInput.value; // Pega o artista
-        if (nome.length < 2) return; // Precisa pelo menos do nome
-
-        limparCamposAutoFill(tipoMidiaAtual);
-        
-        let url = `/api/tmdb/buscar-musica?query=${nome}`;
-        if (artista) {
-            url += `&artista=${artista}`; 
+        const artista = midiaArtistaInput.value;
+        if (nome.length < 2 && artista.length < 2) { 
+            clearApiResults();
+            return;
         }
-
+        let url = `/api/tmdb/buscar-musica?query=${nome}`;
+        if (artista) { url += `&artista=${artista}`; }
         fetch(url, { credentials: 'include' })
-            .then(response => response.ok ? response.json() : Promise.reject('Não encontrado'))
-            .then(data => {
-                if (!midiaArtistaInput.value) {
-                    midiaArtistaInput.value = data.artista || '';
-                }
-                midiaAlbumInput.value = data.album || '';
-                midiaDataEstreiaInput.value = formatarDataParaForm(data.dataEstreia); 
-            })
-            .catch(error => console.warn(error.message));
+            .then(response => response.ok ? response.json() : [])
+            .then(data => { displayApiResults(data); })
+            .catch(error => { console.warn(error.message); clearApiResults(); });
     }
 
+    // ===============================================
+    // === LISTENERS DE INPUT (COM DEBOUNCE) ===
+    // ===============================================
 
-    // --- ATRIBUINDO OS LISTENERS (A LÓGICA CORRIGIDA) ---
+    const handleApiSearch = () => {
+        apiDataSelecionada = null; 
+        
+        if (tipoMidiaAtual === 'filme' || tipoMidiaAtual === 'serie') {
+            triggerFilmeSerieAutoFill();
+        } else if (tipoMidiaAtual === 'livro') { 
+            triggerLivroAutoFill(); 
+        } else if (tipoMidiaAtual === 'musica') { 
+            triggerMusicaAutoFill(); 
+        }
+    };
 
-    // Listener de "blur" (sair do campo) para NOME
+    const debouncedApiSearch = debounce(handleApiSearch, 500);
+
     if(midiaNomeInput) {
-        midiaNomeInput.addEventListener('blur', () => {
-            if (tipoMidiaAtual === 'filme' || tipoMidiaAtual === 'serie') {
-                triggerFilmeSerieAutoFill();
-            } else if (tipoMidiaAtual === 'livro') { 
-                triggerLivroAutoFill(); // Dispara a busca (só com o nome)
-            } else if (tipoMidiaAtual === 'musica') { 
-                triggerMusicaAutoFill(); // Dispara a busca (só com o nome)
-            }
-        });
+        midiaNomeInput.addEventListener('input', debouncedApiSearch);
     }
-
-    // Listener de "blur" (sair do campo) para ARTISTA (Música)
     if(midiaArtistaInput) {
-        midiaArtistaInput.addEventListener('blur', () => {
-            if (tipoMidiaAtual === 'musica') {
-                triggerMusicaAutoFill(); // Dispara a busca refinada (Nome + Artista)
-            }
-        });
+        midiaArtistaInput.addEventListener('input', debouncedApiSearch);
     }
-
-    // Listener de "blur" (sair do campo) para AUTOR (Livro)
     if(midiaAutorInput) {
-        midiaAutorInput.addEventListener('blur', () => {
-            if (tipoMidiaAtual === 'livro') {
-                triggerLivroAutoFill(); // Dispara a busca refinada (Nome + Autor)
-            }
-        });
+        midiaAutorInput.addEventListener('input', debouncedApiSearch);
+    }
+    if(midiaDiretorInput) { // <-- ADICIONADO LISTENER DO DIRETOR
+        midiaDiretorInput.addEventListener('input', debouncedApiSearch);
     }
 
 
-    // --- API: Botão SALVAR MÍDIA (Criação ou Edição) ---
-    // (Sem alteração)
+    // --- Botão SALVAR MÍDIA (Sem alteração) ---
     if(btnSalvarMidia) {
         btnSalvarMidia.addEventListener('click', () => {
             if (!tipoMidiaAtual) { 
                 alert("Erro: Tipo de mídia desconhecido."); 
                 return; 
             }
+            
+            clearApiResults(); 
             
             let url = `/api/midias/${tipoMidiaAtual}`;
             let metodo = 'POST'; 
@@ -717,6 +891,14 @@ window.addEventListener('DOMContentLoaded', () => {
             if (nome === "") { alert('O campo "Nome" é obrigatório!'); return; }
             payload.nome = nome; payload.nota = nota; payload.comentario = comentario;
 
+            if (apiDataSelecionada && !idMidiaEmEdicao) { 
+                payload.posterUrl = apiDataSelecionada.posterUrl || null;
+                payload.sinopse = apiDataSelecionada.sinopse || null;
+            } else if (!idMidiaEmEdicao) { 
+                payload.posterUrl = null;
+                payload.sinopse = null;
+            }
+            
             if (tipoMidiaAtual === 'filme') {
                 payload.diretor = document.getElementById('midia-diretor').value;
                 payload.anoLancamento = parseInt(document.getElementById('midia-ano-lancamento').value, 10) || 0; 
@@ -726,6 +908,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 payload.artista = document.getElementById('midia-artista').value;
                 payload.album = document.getElementById('midia-album').value;
                 payload.dataEstreia = document.getElementById('midia-data-estreia').value;
+                if (apiDataSelecionada && !idMidiaEmEdicao) {
+                    payload.posterUrl = apiDataSelecionada.posterUrl || null;
+                    payload.sinopse = apiDataSelecionada.sinopse || null; // 'sinopse' (letra)
+                }
             } else if (tipoMidiaAtual === 'livro') {
                 payload.autor = document.getElementById('midia-autor').value;
                 payload.genero = document.getElementById('midia-genero-livro').value; 
@@ -752,11 +938,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 modalAddMidia.classList.add('escondido');
                 idMidiaEmEdicao = null; 
                 tipoMidiaAtual = null;
+                apiDataSelecionada = null; 
                 carregarFeedUsuario(); 
             })
             .catch(error => { 
                 console.error(error); 
                 alert(error.message); 
+                apiDataSelecionada = null; 
             });
         });
     }

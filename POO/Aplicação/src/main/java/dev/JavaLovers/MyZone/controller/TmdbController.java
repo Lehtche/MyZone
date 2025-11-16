@@ -11,6 +11,7 @@ import dev.JavaLovers.MyZone.dto.TmdbResponseDTO;
 import dev.JavaLovers.MyZone.dto.LivroApiResponseDTO; 
 import dev.JavaLovers.MyZone.dto.MusicaApiResponseDTO; 
 import dev.JavaLovers.MyZone.service.MidiaService;
+import java.util.List; 
 
 @RestController
 @RequestMapping("/api/tmdb") 
@@ -19,42 +20,46 @@ public class TmdbController {
     @Autowired
     private MidiaService midiaService; 
 
-    // --- Endpoint de Filmes/Séries (Sem alteração) ---
+    // --- ATUALIZADO: Endpoint de Filmes/Séries (aceita diretor) ---
     @GetMapping("/buscar")
-    public ResponseEntity<TmdbResponseDTO> buscarMidia(
+    public ResponseEntity<List<TmdbResponseDTO>> buscarMidia( 
             @RequestParam String query,
-            @RequestParam String tipo) {
+            @RequestParam String tipo,
+            @RequestParam(required = false) String diretorQuery) { // <-- PARÂMETRO ADICIONADO
         
-        TmdbResponseDTO resultado = midiaService.buscarDetalhesTmdb(query, tipo);
+        // Passa o diretor para o serviço
+        List<TmdbResponseDTO> resultado = midiaService.buscarDetalhesTmdb(query, tipo, diretorQuery); 
         
-        if (resultado.getPosterUrl() == null && resultado.getAnoLancamento() == 0 && resultado.getGenero() == null) {
+        if (resultado.isEmpty()) { 
             return ResponseEntity.notFound().build();
         }
         
         return ResponseEntity.ok(resultado);
     }
 
-    // --- Endpoint de Livros (Sem alteração) ---
+    // --- ATUALIZADO: Endpoint de Livros (limite 10) ---
     @GetMapping("/buscar-livro")
-    public ResponseEntity<LivroApiResponseDTO> buscarLivro(@RequestParam String query, @RequestParam(required = false) String autor) {
-        LivroApiResponseDTO resultado = midiaService.buscarDetalhesLivro(query, autor);
-        if ("N/A".equals(resultado.getAutor()) && resultado.getPosterUrl() == null) {
+    public ResponseEntity<List<LivroApiResponseDTO>> buscarLivro( 
+            @RequestParam String query, 
+            @RequestParam(required = false) String autor) {
+        
+        List<LivroApiResponseDTO> resultado = midiaService.buscarDetalhesLivro(query, autor); 
+        
+        if (resultado.isEmpty()) { 
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(resultado);
     }
 
-    /**
-     * ATUALIZADO: Busca Músicas na API do Deezer
-     * Agora aceita um parâmetro 'artista' opcional para refinar a busca.
-     */
+    // --- ATUALIZADO: Endpoint de Músicas (limite 10) ---
     @GetMapping("/buscar-musica")
-    public ResponseEntity<MusicaApiResponseDTO> buscarMusica(
+    public ResponseEntity<List<MusicaApiResponseDTO>> buscarMusica( 
             @RequestParam String query,
-            @RequestParam(required = false) String artista) { // <-- ARTISTA ADICIONADO
+            @RequestParam(required = false) String artista) {
         
-        MusicaApiResponseDTO resultado = midiaService.buscarDetalhesMusica(query, artista); // <-- ARTISTA ADICIONADO
-         if ("N/A".equals(resultado.getArtista()) && resultado.getPosterUrl() == null) {
+        List<MusicaApiResponseDTO> resultado = midiaService.buscarDetalhesMusica(query, artista); 
+         
+         if (resultado.isEmpty()) { 
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(resultado);
