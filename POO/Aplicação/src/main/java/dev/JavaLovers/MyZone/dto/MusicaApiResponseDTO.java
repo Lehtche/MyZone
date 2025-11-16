@@ -6,16 +6,16 @@ public class MusicaApiResponseDTO {
     private String artista;
     private String album;
     private String posterUrl;
-    private String dataEstreia;
+    private String anoEstreia; 
     private String sinopse;
 
     public MusicaApiResponseDTO(String nome, String artista, String album,
-                                String posterUrl, String dataEstreia, String sinopse) {
+                                String posterUrl, String anoEstreia, String sinopse) {
         this.nome = nome;
         this.artista = artista;
         this.album = album;
         this.posterUrl = posterUrl;
-        this.dataEstreia = dataEstreia;
+        this.anoEstreia = anoEstreia;
         this.sinopse = sinopse;
     }
 
@@ -24,6 +24,6 @@ public class MusicaApiResponseDTO {
     public String getArtista() { return artista; }
     public String getAlbum() { return album; }
     public String getPosterUrl() { return posterUrl; }
-    public String getDataEstreia() { return dataEstreia; }
+    public String getAnoEstreia() { return anoEstreia; }
     public String getSinopse() { return sinopse; }
 }

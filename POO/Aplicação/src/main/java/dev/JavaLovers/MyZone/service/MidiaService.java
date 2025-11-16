@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.LocalDate;
+// import java.time.LocalDate; // (Não é mais necessário para Música)
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +52,6 @@ public class MidiaService {
             return responseList;
         }
 
-        // Verifica se a query do diretor é válida
         boolean hasDirectorQuery = (diretorQuery != null && !diretorQuery.trim().isEmpty());
 
         try {
@@ -66,7 +65,6 @@ public class MidiaService {
             JsonNode results = searchRoot.path("results");
             
             if (results.isArray()) {
-                // Itera sobre TODOS os resultados da API (até 20)
                 for (int i = 0; i < results.size(); i++) { 
                     JsonNode item = results.get(i);
                     String nome = item.path(searchType.equals("movie") ? "title" : "name").asText(null);
@@ -95,7 +93,7 @@ public class MidiaService {
                         genero = genres.get(0).path("name").asText("N/A");
                     }
                     
-                    String diretor = "N/A"; // Diretor encontrado na API
+                    String diretor = "N/A"; 
                     if ("movie".equals(searchType)) {
                         String creditsUrl = String.format(
                             "https://api.themoviedb.org/3/%s/%s/credits?api_key=%s&language=pt-BR",
@@ -114,21 +112,17 @@ public class MidiaService {
                         }
                     }
 
-                    // --- LÓGICA DE FILTRO DO DIRETOR ---
-                    boolean match = true; // Assume que corresponde
+                    boolean match = true; 
                     if (hasDirectorQuery && "movie".equals(searchType)) {
                         if (!diretor.toLowerCase().contains(diretorQuery.toLowerCase())) {
-                            match = false; // Não corresponde, descarta este filme
+                            match = false; 
                         }
                     }
 
-                    // Se correspondeu (ou se não havia filtro de diretor), adiciona à lista
                     if (match) {
                         responseList.add(new TmdbResponseDTO(nome, posterUrl, sinopse, ano, genero, diretor));
                     }
 
-                    // --- NOVO LIMITE DE 10 ---
-                    // Para a busca assim que atingir 10 resultados VÁLIDOS
                     if (responseList.size() >= 10) {
                         break;
                     }
@@ -158,7 +152,7 @@ public class MidiaService {
 
             UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl("https://www.googleapis.com/books/v1/volumes")
                     .queryParam("q", qBuilder.toString())
-                    .queryParam("maxResults", 10); // <-- LIMITE ALTERADO PARA 10
+                    .queryParam("maxResults", 10); 
 
             urlBuilder.queryParam("langRestrict", "pt");
             if (googleBooksApiKey != null && !googleBooksApiKey.isBlank()) {
@@ -174,7 +168,6 @@ public class MidiaService {
             JsonNode root = objectMapper.readTree(response);
             JsonNode items = root.path("items");
             if (items.isArray() && items.size() > 0) {
-                // O loop já respeita o maxResults=10
                 for (int i = 0; i < items.size(); i++) {
                     JsonNode item = items.get(i);
                     JsonNode volumeInfo = item.path("volumeInfo");
@@ -234,7 +227,6 @@ public class MidiaService {
         return results;
     }
 
-    // --- (FALLBACK: Open Library - LIMITE 10) ---
     private List<LivroApiResponseDTO> buscarDetalhesLivroOpenLibrary(String query, String autorQuery) {
         List<LivroApiResponseDTO> responseList = new ArrayList<>();
         String autor = "N/A";
@@ -244,7 +236,7 @@ public class MidiaService {
 
         try {
             UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl("https://openlibrary.org/search.json")
-                .queryParam("limit", 10); // <-- LIMITE ALTERADO PARA 10
+                .queryParam("limit", 10); 
 
             String searchQuery = "";
             if (query != null && !query.isEmpty()) {
@@ -270,7 +262,7 @@ public class MidiaService {
             JsonNode docs = root.path("docs");
 
             if (docs.isArray()) {
-                 for (JsonNode bookInfo : docs) { // Loop respeita o limite da API
+                 for (JsonNode bookInfo : docs) { 
                     String nome = bookInfo.path("title").asText(null);
                     String sinopse = null;
                     JsonNode authors = bookInfo.path("author_name");
@@ -307,7 +299,7 @@ public class MidiaService {
         return responseList;
     }
 
-    // --- (BUSCA DE MÚSICAS (Deezer) - LIMITE 10) ---
+    // --- (BUSCA DE MÚSICAS (Deezer) - CORRIGIDO) ---
    public List<MusicaApiResponseDTO> buscarDetalhesMusica(String query, String artistaQuery) {
         List<MusicaApiResponseDTO> responseList = new ArrayList<>();
         try {
@@ -317,18 +309,44 @@ public class MidiaService {
             }
             String searchUrl = UriComponentsBuilder.fromHttpUrl("https://api.deezer.com/search")
                     .queryParam("q", deezerQuery)
-                    .queryParam("limit", 10) // <-- LIMITE ALTERADO PARA 10
+                    .queryParam("limit", 10) 
                     .toUriString();
             String searchResponse = restTemplate.getForObject(searchUrl, String.class);
             JsonNode searchRoot = objectMapper.readTree(searchResponse);
             JsonNode data = searchRoot.path("data");
         
             if (data.isArray()) {
-                for (JsonNode trackInfo : data) { // Loop respeita o limite da API
+                for (JsonNode trackInfo : data) { 
                     String nome = trackInfo.path("title").asText(null);
                     String artista = trackInfo.path("artist").path("name").asText("N/A");
                     String album = trackInfo.path("album").path("title").asText("N/A");
                     String posterUrl = trackInfo.path("album").path("cover_medium").asText(null);
+                    
+                    // --- CORREÇÃO: Lógica para buscar o Ano ---
+                    String anoEstreia = null;
+                    try {
+                        // 1. Obter o ID do álbum da busca
+                        String albumId = trackInfo.path("album").path("id").asText(null);
+                        
+                        if (albumId != null) {
+                            // 2. Fazer uma NOVA chamada à API de ÁLBUM
+                            String albumUrl = "https://api.deezer.com/album/" + albumId;
+                            String albumResponse = restTemplate.getForObject(albumUrl, String.class);
+                            JsonNode albumRoot = objectMapper.readTree(albumResponse);
+                            
+                            // 3. Obter a release_date do objeto ÁLBUM completo
+                            String releaseDateStr = albumRoot.path("release_date").asText(null);
+                            
+                            if(releaseDateStr != null && releaseDateStr.length() >= 4) {
+                                anoEstreia = releaseDateStr.substring(0, 4); // Pega "YYYY" de "YYYY-MM-DD"
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Erro ao buscar ano do álbum: " + e.getMessage());
+                        // Ignora se não encontrar o ano
+                    }
+                    // --- FIM DA CORREÇÃO ---
+                    
                     String letra = null;
                     try {
                         String lyricsUrl = String.format(
@@ -342,9 +360,9 @@ public class MidiaService {
                     } catch (Exception e) {
                         letra = null;
                     }
-                    String dataEstreia = null;
+
                     responseList.add(new MusicaApiResponseDTO(
-                            nome, artista, album, posterUrl, dataEstreia, letra
+                            nome, artista, album, posterUrl, anoEstreia, letra
                     ));
                 }
             }
@@ -400,6 +418,8 @@ public class MidiaService {
         
         return serieSalva;
     }
+
+    // --- SALVAR MUSICA (ATUALIZADO) ---
     @Transactional
     public Musica salvarMusica(MusicaDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
@@ -410,12 +430,8 @@ public class MidiaService {
         musica.setAlbum(dto.getAlbum());
         musica.setPosterUrl(dto.getPosterUrl());
         musica.setSinopse(dto.getSinopse()); 
+        musica.setAnoEstreia(dto.getAnoEstreia()); 
 
-        if(dto.getDataEstreia() != null && !dto.getDataEstreia().isEmpty()) {
-            try {
-                musica.setDataEstreia(LocalDate.parse(dto.getDataEstreia(), DATE_FORMATTER));
-            } catch (Exception e) {}
-        }
         Musica musicaSalva = musicaRepository.save(musica);
         
         AvaliacaoDTO avaliacaoDTO = new AvaliacaoDTO();
@@ -426,6 +442,7 @@ public class MidiaService {
         
         return musicaSalva;
     }
+
     @Transactional
     public Livro salvarLivro(LivroDTO dto, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
@@ -464,15 +481,11 @@ public class MidiaService {
              throw new RuntimeException("Acesso negado: Você não é o dono desta mídia.");
         }
         
-        // Deleta avaliações do Mongo
         List<Avaliacao> avaliacoes = avaliacaoService.listarAvaliacoesPorMidia(midiaId);
         if (!avaliacoes.isEmpty()) {
-            // Seria ideal ter: avaliacaoService.deletarAvaliacoes(avaliacoes);
-            // Mas por enquanto, precisamos injetar o repo de avaliação aqui para o delete.
-            // (Esta é a única parte que não refatoramos no passo anterior)
+            // (Idealmente: avaliacaoService.deletarAvaliacoes(avaliacoes))
         }
         
-        // Deleta mídia do SQL
         midiaRepository.callDeletarMidia(midiaId, usuario.getId());
     }
     private Midia verificarPosse(Long midiaId, String emailUsuario) {
@@ -484,7 +497,6 @@ public class MidiaService {
         return midia;
     }
     
-    // (Helper para verificar strings)
     private boolean isNullOrEmpty(String str) {
         return str == null || str.trim().isEmpty();
     }
@@ -541,6 +553,8 @@ public class MidiaService {
         
         return serieAtualizada;
     }
+
+    // --- ATUALIZAR MUSICA (ATUALIZADO) ---
     @Transactional
     public Musica atualizarMusica(Long id, MusicaDTO dto, String emailUsuario) {
         Midia midia = verificarPosse(id, emailUsuario);
@@ -558,18 +572,14 @@ public class MidiaService {
         if (!isNullOrEmpty(dto.getAlbum())) {
             musica.setAlbum(dto.getAlbum());
         }
-        // (Sinopse/Letra e Poster SÃO PRESERVADOS se o DTO não os trouxer)
         if (!isNullOrEmpty(dto.getSinopse())) {
             musica.setSinopse(dto.getSinopse());
         }
         if (!isNullOrEmpty(dto.getPosterUrl())) {
             musica.setPosterUrl(dto.getPosterUrl());
         }
-        
-        if(dto.getDataEstreia() != null && !dto.getDataEstreia().isEmpty()) {
-            try {
-                musica.setDataEstreia(LocalDate.parse(dto.getDataEstreia(), DATE_FORMATTER));
-            } catch (Exception e) {}
+        if (dto.getAnoEstreia() > 0) { // <-- CAMPO ATUALIZADO
+            musica.setAnoEstreia(dto.getAnoEstreia());
         }
     
         Musica musicaAtualizada = musicaRepository.save(musica);
@@ -582,6 +592,7 @@ public class MidiaService {
         
         return musicaAtualizada;
     }
+
     @Transactional
     public Livro atualizarLivro(Long id, LivroDTO dto, String emailUsuario) {
         Midia midia = verificarPosse(id, emailUsuario);

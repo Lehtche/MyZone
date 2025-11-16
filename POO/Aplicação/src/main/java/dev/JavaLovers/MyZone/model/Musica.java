@@ -2,7 +2,6 @@ package dev.JavaLovers.MyZone.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "musica")
@@ -10,7 +9,7 @@ public class Musica extends Midia {
 
     private String artista;
     private String album;
-    private LocalDate dataEstreia;
+    private int anoEstreia; 
 
     public Musica() {
         super();
@@ -23,8 +22,8 @@ public class Musica extends Midia {
     public String getAlbum() { return album; }
     public void setAlbum(String album) { this.album = album; }
 
-    public LocalDate getDataEstreia() { return dataEstreia; }
-    public void setDataEstreia(LocalDate dataEstreia) { this.dataEstreia = dataEstreia; }
+    public int getAnoEstreia() { return anoEstreia; } 
+    public void setAnoEstreia(int anoEstreia) { this.anoEstreia = anoEstreia; } 
 
     @Override
     public String getTipo() {

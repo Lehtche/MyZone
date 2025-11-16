@@ -103,7 +103,11 @@
 
             <div class="form-group" data-tipo="musica"><label for="midia-artista">Artista:</label><input type="text" id="midia-artista"></div>
             <div class="form-group" data-tipo="musica"><label for="midia-album">Álbum:</label><input type="text" id="midia-album"></div>
-            <div class="form-group" data-tipo="musica"><label for="midia-data-estreia">Data de estreia:</label><input type="text" id="midia-data-estreia" placeholder="DD/MM/AAAA"></div>
+            
+            <div class="form-group" data-tipo="musica">
+                <label for="midia-ano-estreia">Ano de Estreia:</label>
+                <input type="number" id="midia-ano-estreia" placeholder="Ex: 2024">
+            </div>
             <div class="form-group" data-tipo="filme"><label for="midia-diretor">Diretor:</label><input type="text" id="midia-diretor"></div>
             <div class="form-group" data-tipo="filme"><label for="midia-ano-lancamento">Ano Lançamento:</label><input type="number" id="midia-ano-lancamento" placeholder="Ex: 2024"></div>
             <div class="form-group" data-tipo="serie"><label for="midia-genero-serie">Gênero:</label><input type="text" id="midia-genero-serie" placeholder="Ex: Drama"></div>
@@ -119,52 +123,39 @@
     <div class="form-group-rating campo-comum"><label>Avaliação:</label><div class="star-rating"><span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span><span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span><span class="star" data-value="5">☆</span></div><input type="hidden" id="midia-nota" value="0"></div>
     <button type="button" class="btn-auth" id="btn-salvar-midia">Salvar Mídia</button>
     </form></div></div></div>
-    <div id="modal-detalhes-midia" class="modal-overlay escondido"><div class="detalhes-midia-window"><div class="detalhes-midia-header-bar"><span id="detalhe-titulo">Carregando...</span><button id="btn-fechar-detalhes-midia" class="btn-fechar-popup"></button></div><div class="detalhes-midia-content"><div class="detalhes-midia-main"><img id="detalhe-poster" src="https://via.placeholder.com/150x225/004a99/FFFFFF?text=MyZone" alt="Poster" class="detalhe-poster"><div class="detalhe-info"><p id="detalhe-sinopse">Carregando sinopse...</p><hr><div id="detalhe-info-extra"></div><button class="btn-auth" id="btn-editar-midia" style="background-color: #0056b3; border-color: #001a4d; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;"> Editar </button><button class="btn-auth btn-danger btn-deletar-midia" id="btn-deletar-midia"> Deletar Mídia </button></div></div><div class="detalhe-avaliacoes"><h3>Avaliações (dos usuários)</h3><div id="detalhe-avaliacoes-lista"><p>Carregando avaliações...</p></div></div></div></div></div>
     
-    <script src="script.js"></script>
-
     <div id="modal-add-avaliacao" class="modal-overlay escondido">
-    <div class="modal-content" style="max-width: 450px;">
-        <button id="btn-fechar-modal-avaliacao" class="btn-fechar-modal">X</button>
-        <div class="auth-form-container modal-form">
-            <h2 id="modal-avaliacao-titulo">Minha Avaliação</h2>
-            
-            <div class="form-group-rating campo-comum" style="margin-top: 25px;">
-                <label>Avaliação:</label>
-                <div class="star-rating" id="avaliacao-stars">
-                    <span class="star" data-value="1">☆</span>
-                    <span class="star" data-value="2">☆</span>
-                    <span class="star" data-value="3">☆</span>
-                    <span class="star" data-value="4">☆</span>
-                    <span class="star" data-value="5">☆</span>
+        <div class="modal-content" style="max-width: 450px;">
+            <button id="btn-fechar-modal-avaliacao" class="btn-fechar-modal">X</button>
+            <div class="auth-form-container modal-form">
+                <h2 id="modal-avaliacao-titulo">Minha Avaliação</h2>
+                <div class="form-group-rating campo-comum" style="margin-top: 25px;">
+                    <label>Avaliação:</label>
+                    <div class="star-rating" id="avaliacao-stars">
+                        <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span><span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span><span class="star" data-value="5">☆</span>
+                    </div>
+                    <input type="hidden" id="avaliacao-nota" value="0">
                 </div>
-                <input type="hidden" id="avaliacao-nota" value="0">
+                <div class="form-group campo-comum">
+                    <label for="avaliacao-comentario">Comentários:</label>
+                    <textarea id="avaliacao-comentario" placeholder="O que você achou?"></textarea>
+                </div>
+                <button type="button" class="btn-auth" id="btn-salvar-avaliacao">Salvar Avaliação</button>
             </div>
-
-            <div class="form-group campo-comum">
-                <label for="avaliacao-comentario">Comentários:</label>
-                <textarea id="avaliacao-comentario" placeholder="O que você achou?"></textarea>
-            </div>
-            
-            <button type="button" class="btn-auth" id="btn-salvar-avaliacao">Salvar Avaliação</button>
         </div>
     </div>
-</div>
 
-<div id="modal-detalhes-midia" class="modal-overlay escondido">
-    <div class="detalhe-info">
+    <div id="modal-detalhes-midia" class="modal-overlay escondido"><div class="detalhes-midia-window"><div class="detalhes-midia-header-bar"><span id="detalhe-titulo">Carregando...</span><button id="btn-fechar-detalhes-midia" class="btn-fechar-popup"></button></div><div class="detalhes-midia-content"><div class="detalhes-midia-main"><img id="detalhe-poster" src="https://via.placeholder.com/150x225/004a99/FFFFFF?text=MyZone" alt="Poster" class="detalhe-poster"><div class="detalhe-info">
         <p id="detalhe-sinopse">Carregando sinopse...</p>
         <hr>
         <div id="detalhe-info-extra"></div>
-
-        <button class="btn-auth" id="btn-abrir-avaliacao" style="background-color: #007bff; border-color: #007bff; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;">
-            Adicionar/Editar Avaliação
-        </button>
-        
-        <button class="btn-auth" id="btn-editar-midia" style="background-color: #0056b3; border-color: #001a4d; width: auto; padding: 10px 20px; font-size: 14px; margin-top: 20px;"> Editar Mídia </button>
-        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn-auth" id="btn-editar-midia" style="background-color: #0056b3; border-color: #001a4d; width: auto; padding: 10px 20px; font-size: 14px; margin: 0;"> 
+                Editar Mídia 
+        </div>
         <button class="btn-auth btn-danger btn-deletar-midia" id="btn-deletar-midia"> Deletar Mídia </button>
-    </div>
-    </div>
+    </div></div><div class="detalhe-avaliacoes"><h3>Avaliações (dos usuários)</h3><div id="detalhe-avaliacoes-lista"><p>Carregando avaliações...</p></div></div></div></div></div>
+    
+    <script src="script.js"></script>
 </body>
 </html>

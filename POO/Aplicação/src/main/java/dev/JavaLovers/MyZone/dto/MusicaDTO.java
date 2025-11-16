@@ -5,7 +5,7 @@ public class MusicaDTO {
     private String nome;
     private String artista;
     private String album;
-    private String dataEstreia; 
+    private int anoEstreia; 
     private int nota;
     private String comentario;
     private String posterUrl;
@@ -21,8 +21,8 @@ public class MusicaDTO {
     public String getAlbum() { return album; }
     public void setAlbum(String album) { this.album = album; }
 
-    public String getDataEstreia() { return dataEstreia; }
-    public void setDataEstreia(String dataEstreia) { this.dataEstreia = dataEstreia; }
+    public int getAnoEstreia() { return anoEstreia; } 
+    public void setAnoEstreia(int anoEstreia) { this.anoEstreia = anoEstreia; } 
 
     public int getNota() { return nota; }
     public void setNota(int nota) { this.nota = nota; }

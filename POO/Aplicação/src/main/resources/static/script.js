@@ -64,12 +64,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const addMidiaForm = document.querySelector('.add-midia-form');
     const stars = document.querySelectorAll('.star-rating .star'); // Estrelas do modal ADICIONAR
     const midiaNotaInput = document.getElementById('midia-nota');
-    const midiaDataEstreiaInput = document.getElementById('midia-data-estreia');
+    // const midiaDataEstreiaInput = document.getElementById('midia-data-estreia'); // <-- REMOVIDO
     
     const midiaNomeInput = document.getElementById('midia-nome');
     const midiaComentariosInput = document.getElementById('midia-comentarios');
     const midiaArtistaInput = document.getElementById('midia-artista');
     const midiaAlbumInput = document.getElementById('midia-album');
+    const midiaAnoEstreiaInput = document.getElementById('midia-ano-estreia'); // <-- ADICIONADO
     const midiaDiretorInput = document.getElementById('midia-diretor');
     const midiaAnoLancamentoInput = document.getElementById('midia-ano-lancamento');
     const midiaGeneroSerieInput = document.getElementById('midia-genero-serie'); 
@@ -124,10 +125,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     function formatarDataParaForm(data) {
         if (!data) return "";
+        // Não formata mais o ano (que é int), apenas datas completas (Nascimento)
         try {
-            if (data.length === 4 && !isNaN(data)) { 
-                return `01/01/${data}`;
-            }
             const dataObj = new Date(data + 'T00:00:00'); 
             const dia = String(dataObj.getUTCDate()).padStart(2, '0');
             const mes = String(dataObj.getUTCMonth() + 1).padStart(2, '0'); 
@@ -233,6 +232,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // === "preencherModalDetalhes" ATUALIZADO ===
     function preencherModalDetalhes(midia, avaliacoes) {
         midiaAtualEmDetalhe = midia; 
         avaliacaoAtualDoUsuario = null; 
@@ -249,7 +249,8 @@ window.addEventListener('DOMContentLoaded', () => {
             infoExtraHtml = `<strong>Gênero:</strong> ${midia.genero || 'N/A'}`;
         } else if (midia.tipo === 'MUSICA') {
             detalheSinopse.classList.add('letra-de-musica');
-            infoExtraHtml = `<strong>Artista:</strong> ${midia.artista || 'N/A'}<br><strong>Álbum:</strong> ${midia.album || 'N/A'}<br><strong>Estreia:</strong> ${formatarDataParaForm(midia.dataEstreia) || 'N/A'}`;
+            // --- CAMPO ATUALIZADO ---
+            infoExtraHtml = `<strong>Artista:</strong> ${midia.artista || 'N/A'}<br><strong>Álbum:</strong> ${midia.album || 'N/A'}<br><strong>Ano:</strong> ${midia.anoEstreia || 'N/A'}`;
         } else if (midia.tipo === 'LIVRO') {
             infoExtraHtml = `<strong>Autor:</strong> ${midia.autor || 'N/A'}<br><strong>Gênero:</strong> ${midia.genero || 'N/A'}`;
         }
@@ -278,6 +279,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if (av.usuarioId !== usuarioLogado.id) { 
                 const avaliacaoCard = document.createElement('div');
                 avaliacaoCard.className = 'avaliacao-item';
+                // (Opcional: podemos buscar o nome do usuário futuramente usando a View VW_Usuarios_Publicos)
                 avaliacaoCard.innerHTML = `
                     <div class="avaliacao-item-header">
                         <span class="avaliacao-item-usuario">Avaliação (ID Utilizador: ${av.usuarioId})</span>
@@ -331,11 +333,14 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 3. LÓGICA DE NAVEGAÇÃO E API
     // ===============================================
 
-    // (Login, Cadastro, Navegação, Modais de Perfil/Apagar - Sem alteração)
+    // (Login, Cadastro, Navegação)
     btnIrParaCadastro.addEventListener('click', () => { telaLogin.classList.add('escondido'); telaCadastro.classList.remove('escondido'); });
     btnIrParaLogin.addEventListener('click', () => { telaCadastro.classList.add('escondido'); telaLogin.classList.remove('escondido'); });
+    
+    // Aplica máscara apenas ao campo de nascimento
     if(cadNascimentoInput) { cadNascimentoInput.addEventListener('input', aplicarMascaraData); }
-    if (midiaDataEstreiaInput) { midiaDataEstreiaInput.addEventListener('input', aplicarMascaraData); }
+    // if (midiaDataEstreiaInput) { midiaDataEstreiaInput.addEventListener('input', aplicarMascaraData); } // <-- REMOVIDO
+
     btnEnviarCadastro.addEventListener('click', () => {
         const email = cadEmailInput.value; const nome = cadNomeInput.value; const senha = cadSenhaInput.value;
         const senhaConfirmacao = cadConfirmaSenhaInput.value; const dataNascimentoInput = cadNascimentoInput.value;
@@ -433,6 +438,8 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+    
+    // === "btnEditarMidia" ATUALIZADO ===
     if (btnEditarMidia) {
         btnEditarMidia.addEventListener('click', () => {
             if (!midiaAtualEmDetalhe) {
@@ -446,10 +453,8 @@ window.addEventListener('DOMContentLoaded', () => {
             const nomeBotao = document.querySelector(`.btn-tipo-midia[data-tipo="${tipo}"]`).textContent;
             abrirModalAddMidia(tipo, nomeBotao);
             
-            // Preenche os dados da Mídia
             midiaNomeInput.value = midiaAtualEmDetalhe.nome || '';
             
-            // Preenche a avaliação (se houver)
             if (avaliacaoAtualDoUsuario) {
                 midiaComentariosInput.value = avaliacaoAtualDoUsuario.comentario || '';
                 setStars(avaliacaoAtualDoUsuario.nota); 
@@ -458,7 +463,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 resetarEstrelas(); 
             }
             
-            // Preenche os campos específicos do tipo
             if (tipo === 'filme') {
                 midiaDiretorInput.value = midiaAtualEmDetalhe.diretor || '';
                 midiaAnoLancamentoInput.value = midiaAtualEmDetalhe.anoLancamento || '';
@@ -467,7 +471,8 @@ window.addEventListener('DOMContentLoaded', () => {
             } else if (tipo === 'musica') {
                 midiaArtistaInput.value = midiaAtualEmDetalhe.artista || '';
                 midiaAlbumInput.value = midiaAtualEmDetalhe.album || '';
-                midiaDataEstreiaInput.value = formatarDataParaForm(midiaAtualEmDetalhe.dataEstreia);
+                // --- CAMPO ATUALIZADO ---
+                midiaAnoEstreiaInput.value = midiaAtualEmDetalhe.anoEstreia || '';
             } else if (tipo === 'livro') {
                 midiaAutorInput.value = midiaAtualEmDetalhe.autor || '';
                 midiaGeneroLivroInput.value = midiaAtualEmDetalhe.genero || '';
@@ -702,6 +707,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // === "populateFormWithApiData" ATUALIZADO ===
     function populateFormWithApiData(data) {
         if (tipoMidiaAtual === 'filme') {
             midiaDiretorInput.value = data.diretor || '';
@@ -714,7 +720,8 @@ window.addEventListener('DOMContentLoaded', () => {
         } else if (tipoMidiaAtual === 'musica') {
             midiaArtistaInput.value = data.artista || '';
             midiaAlbumInput.value = data.album || '';
-            midiaDataEstreiaInput.value = formatarDataParaForm(data.dataEstreia);
+            // --- CAMPO ATUALIZADO ---
+            midiaAnoEstreiaInput.value = data.anoEstreia || '';
         }
     }
 
@@ -781,20 +788,19 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // === FUNÇÕES DE TRIGGER (API) ATUALIZADAS ===
-
     function triggerFilmeSerieAutoFill() {
         if (idMidiaEmEdicao) return; 
         const nome = midiaNomeInput.value;
-        const diretor = midiaDiretorInput.value; // <-- LÊ O DIRETOR
+        const diretor = midiaDiretorInput.value; 
         
-        if (nome.length < 2 && diretor.length < 2) { // <-- VERIFICA AMBOS
+        if (nome.length < 2 && diretor.length < 2) { 
             clearApiResults();
             return;
         }
         
         let url = `/api/tmdb/buscar?query=${nome}&tipo=${tipoMidiaAtual}`;
         
-        if (diretor && diretor.length > 1) { // <-- ADICIONA DIRETOR À URL
+        if (diretor && diretor.length > 1) { 
             url += `&diretor=${diretor}`;
         }
         
@@ -861,12 +867,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if(midiaAutorInput) {
         midiaAutorInput.addEventListener('input', debouncedApiSearch);
     }
-    if(midiaDiretorInput) { // <-- ADICIONADO LISTENER DO DIRETOR
+    if(midiaDiretorInput) { 
         midiaDiretorInput.addEventListener('input', debouncedApiSearch);
     }
 
 
-    // --- Botão SALVAR MÍDIA (Sem alteração) ---
+    // === "btnSalvarMidia" ATUALIZADO ===
     if(btnSalvarMidia) {
         btnSalvarMidia.addEventListener('click', () => {
             if (!tipoMidiaAtual) { 
@@ -907,7 +913,9 @@ window.addEventListener('DOMContentLoaded', () => {
             } else if (tipoMidiaAtual === 'musica') {
                 payload.artista = document.getElementById('midia-artista').value;
                 payload.album = document.getElementById('midia-album').value;
-                payload.dataEstreia = document.getElementById('midia-data-estreia').value;
+                // --- CAMPO ATUALIZADO ---
+                payload.anoEstreia = parseInt(document.getElementById('midia-ano-estreia').value, 10) || 0; 
+                
                 if (apiDataSelecionada && !idMidiaEmEdicao) {
                     payload.posterUrl = apiDataSelecionada.posterUrl || null;
                     payload.sinopse = apiDataSelecionada.sinopse || null; // 'sinopse' (letra)

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     email VARCHAR(255),
     nome VARCHAR(255),
     senha VARCHAR(255),
+    foto_url VARCHAR(255), -- Coluna adicionada para foto
     PRIMARY KEY (id)
 );
 
@@ -49,7 +50,7 @@ CREATE TABLE IF NOT EXISTS midia (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nome VARCHAR(255),
     poster_url VARCHAR(255),
-    sinopse VARCHAR(2000),
+    sinopse TEXT, -- MODIFICADO DE VARCHAR(2000) PARA TEXT
     usuario_id BIGINT NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (usuario_id) REFERENCES usuario(id)
@@ -80,7 +81,7 @@ CREATE TABLE IF NOT EXISTS livro (
 CREATE TABLE IF NOT EXISTS musica (
     album VARCHAR(255),
     artista VARCHAR(255),
-    data_estreia DATE,
+    ano_estreia INT, -- <-- CAMPO ATUALIZADO (era data_estreia DATE)
     id BIGINT NOT NULL,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES midia(id) ON DELETE CASCADE
@@ -212,7 +213,7 @@ SELECT
     l.genero AS genero_livro,
     mu.artista,
     mu.album,
-    mu.data_estreia     -- (nome da coluna SQL)
+    mu.ano_estreia     -- <-- CAMPO ATUALIZADO
 FROM midia m
 JOIN usuario u ON m.usuario_id = u.id
 LEFT JOIN filme f ON m.id = f.id
