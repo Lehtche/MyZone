@@ -7,9 +7,12 @@ import org.springframework.stereotype.Repository;
 
 import dev.JavaLovers.MyZone.model.Colecao;
 import dev.JavaLovers.MyZone.model.Midia;
+import dev.JavaLovers.MyZone.model.Usuario;
 
 @Repository
 public interface ColecaoRepository extends JpaRepository<Colecao, Long> {
     // Método para encontrar todas as coleções que contêm uma mídia específica
     List<Colecao> findByMidia(Midia midia);
+    // Deleta todas as coleções que pertencem a este usuário
+    void deleteByUsuario(Usuario usuario);
 }

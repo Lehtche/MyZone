@@ -251,32 +251,27 @@ END$$
 CREATE PROCEDURE SP_DeletarMidia(IN p_midia_id BIGINT, IN p_usuario_id BIGINT)
 BEGIN
     DECLARE midia_owner BIGINT;
-    
-    -- 1. Verifica se o utilizador que está a tentar apagar é o dono
+
     SELECT usuario_id INTO midia_owner
     FROM midia
     WHERE id = p_midia_id;
     
     IF midia_owner = p_usuario_id THEN
-        -- Se for o dono, inicia a transação
+
         START TRANSACTION;
-        
-        -- 2. Apaga dependências "externas" (filhos de 1º nível)
+
         DELETE FROM colecao WHERE midia_id = p_midia_id;
         DELETE FROM episodio WHERE serie_id = p_midia_id;
-        
-        -- 3. Apaga das tabelas "filhas" (herança JOINED)
+
         DELETE FROM filme WHERE id = p_midia_id;
         DELETE FROM serie WHERE id = p_midia_id;
         DELETE FROM musica WHERE id = p_midia_id;
         DELETE FROM livro WHERE id = p_midia_id;
-        
-        -- 4.apaga da tabela "pai"
+
         DELETE FROM midia WHERE id = p_midia_id;
         
         COMMIT;
     ELSE
-        -- Se não for o dono, dispara um erro customizado
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Acesso negado: Você não é o dono desta mídia.';
     END IF;
 END$$
@@ -293,13 +288,13 @@ DELIMITER ;
 -- deve usar. Deve ser executado manualmente uma vez por um
 -- utilizador com privilégios (como 'root').
 
-/* --EXECUTAR UMA VEZ
+
 CREATE USER 'myzone_app_user'@'localhost' IDENTIFIED BY 'QWERqwer132';
 GRANT SELECT, INSERT, UPDATE, DELETE ON myzone_db.* TO 'myzone_app_user'@'localhost';
 GRANT EXECUTE ON PROCEDURE myzone_db.SP_DeletarMidia TO 'myzone_app_user'@'localhost';
 GRANT EXECUTE ON FUNCTION myzone_db.FN_ContarMidiasUsuario TO 'myzone_app_user'@'localhost';
 FLUSH PRIVILEGES;
-*/
+
 
 -- =====================================================================
 -- FIM DO SCRIPT

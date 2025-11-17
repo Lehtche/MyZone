@@ -9,8 +9,7 @@ O MySQL foi utilizado como SGBD relacional para armazenar os dados estruturados 
 A Figura 1 apresenta o Diagrama Entidade-Relacionamento do banco de dados MySQL utilizado pelo sistema.
 
 *Figura 1 – Diagrama Entidade-Relacionamento do MyZone*
-![DER do MyZone](httpsimages/der.png)
-[cite_start]*(Nota: Você precisará adicionar a imagem do DER do seu .docx [cite: 191] a uma pasta `docs/images` e referenciá-la aqui)*
+![DER do MyZone](images/MyzoneDER.png)
 
 O modelo adota:
 * Herança do tipo `JOINED` para as categorias de mídia.

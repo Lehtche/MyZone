@@ -1,29 +1,30 @@
 package dev.JavaLovers.MyZone.controller;
 
-import dev.JavaLovers.MyZone.dto.LoginRequestDTO;
-import dev.JavaLovers.MyZone.dto.UsuarioResponseDTO; 
-import dev.JavaLovers.MyZone.model.GrupoUsuario; 
-import dev.JavaLovers.MyZone.model.Usuario;
-import dev.JavaLovers.MyZone.repository.UsuarioRepository; 
-import dev.JavaLovers.MyZone.service.UsuarioService;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-// Imports para criar a sessão
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.authority.SimpleGrantedAuthority; 
+import org.springframework.web.bind.annotation.DeleteMapping; 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import dev.JavaLovers.MyZone.dto.LoginRequestDTO;
+import dev.JavaLovers.MyZone.dto.UsuarioResponseDTO;
+import dev.JavaLovers.MyZone.model.Usuario;
+import dev.JavaLovers.MyZone.repository.UsuarioRepository;
+import dev.JavaLovers.MyZone.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-
-import java.security.Principal; // <-- IMPORTAR
-import java.time.LocalDate; 
-import java.util.ArrayList;
-import java.util.List; 
-import java.util.Map; // <-- IMPORTAR
-import java.util.stream.Collectors; 
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -38,7 +39,7 @@ public class UsuarioController {
         this.usuarioRepository = usuarioRepository; 
     }
 
-    // --- CADASTRO (sem alteração) ---
+    // ... (Endpoint /cadastro) ...
     @PostMapping("/cadastro")
     public ResponseEntity<UsuarioResponseDTO> cadastrarUsuario(@RequestBody Usuario novoUsuario) {
         try {
@@ -56,7 +57,7 @@ public class UsuarioController {
         }
     }
 
-    // --- LOGIN (Atualizado para enviar fotoUrl) ---
+    // ... (Endpoint /login) ...
     @PostMapping("/login")
     public ResponseEntity<UsuarioResponseDTO> login(@RequestBody LoginRequestDTO loginDTO, HttpServletRequest request) {
         try {
@@ -74,13 +75,12 @@ public class UsuarioController {
             HttpSession session = request.getSession(true);
             session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
-            // Envia o DTO completo, incluindo a fotoUrl
             UsuarioResponseDTO responseDto = new UsuarioResponseDTO(
                 usuario.getId(),
                 usuario.getNome(),
                 usuario.getEmail(),
                 usuario.getDataNascimento(),
-                usuario.getFotoUrl() // <-- Envia a URL da foto
+                usuario.getFotoUrl() 
             );
             
             return ResponseEntity.ok(responseDto); 
@@ -90,18 +90,14 @@ public class UsuarioController {
         }
     }
 
-    // --- GET USUARIOS PUBLICOS (sem alteração) ---
+    // ... (Endpoint /publicos) ...
     @GetMapping("/publicos")
     public ResponseEntity<List<UsuarioRepository.UsuarioPublicoView>> getUsuariosPublicos() {
         List<UsuarioRepository.UsuarioPublicoView> usuarios = usuarioRepository.findAllPublic();
         return ResponseEntity.ok(usuarios);
     }
     
-    // --- NOVO ENDPOINT PARA ATUALIZAR A FOTO ---
-    /**
-     * Atualiza a foto de perfil do utilizador logado.
-     * Recebe um JSON simples: { "fotoUrl": "http://..." }
-     */
+    // ... (Endpoint /atualizar-foto) ...
     @PostMapping("/atualizar-foto")
     public ResponseEntity<Void> atualizarFoto(@RequestBody Map<String, String> payload, Principal principal) {
         if (principal == null) {
@@ -109,16 +105,44 @@ public class UsuarioController {
         }
         
         String fotoUrl = payload.get("fotoUrl");
-        if (fotoUrl == null || fotoUrl.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
+         if (fotoUrl == null || fotoUrl.isEmpty()) { 
+             return ResponseEntity.badRequest().build();
+         }
 
         try {
-            // Reutiliza o UsuarioService para esta lógica
             usuarioService.atualizarFoto(principal.getName(), fotoUrl);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    // --- ESTE É O LOCAL CORRETO PARA O MÉTODO DE DELETE (Passo 3) ---
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deletarMinhaConta(Principal principal, HttpServletRequest request) {
+        if (principal == null) {
+            return ResponseEntity.status(401).build(); // Não autorizado
+        }
+        
+        try {
+            // 1. Chama o serviço para apagar tudo
+            // (Agora o 'usuarioService' será encontrado!)
+            usuarioService.deletarConta(principal.getName());
+
+            // 2. Limpa o contexto de segurança (logout)
+            SecurityContextHolder.clearContext();
+            
+            // 3. Invalida a sessão HTTP
+            HttpSession session = request.getSession(false); // Pega a sessão atual sem criar uma nova
+            if (session != null) {
+                session.invalidate();
+            }
+            
+            return ResponseEntity.ok().build(); // 200 OK (Sucesso)
+        
+        } catch (Exception e) {
+            System.err.println("Erro ao deletar conta: " + e.getMessage());
+            return ResponseEntity.status(500).build(); // Erro interno
         }
     }
 }

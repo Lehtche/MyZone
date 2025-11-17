@@ -196,10 +196,6 @@ window.addEventListener('DOMContentLoaded', () => {
                     <span class="update-card-desc">${comentario.substring(0, 50)}...</span>
                     <div class="update-card-stars">${'★'.repeat(nota)}${'☆'.repeat(5 - nota)}</div>
                 </div>
-                <div class="update-card-date">
-                    <span>ID</span>
-                    <span>${midia.id}</span>
-                </div>
             `;
             const container = containers[midia.tipo];
             if (container) {
@@ -536,12 +532,48 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     if(btnAbrirModalApagar) { btnAbrirModalApagar.addEventListener('click', () => { modalApagarConta.classList.remove('escondido'); }); }
     if(btnFecharModalApagar) { btnFecharModalApagar.addEventListener('click', () => { modalApagarConta.classList.add('escondido'); }); }
-    if(btnConfirmarApagar) {
+if(btnConfirmarApagar) {
         btnConfirmarApagar.addEventListener('click', () => {
-            modalApagarConta.classList.add('escondido');
-            alert('Conta apagada com sucesso! (Fictício)');
-            telaApp.classList.add('escondido');
-            telaLogin.classList.remove('escondido');
+            
+            // Adiciona feedback visual de carregamento
+            btnConfirmarApagar.textContent = "Apagando...";
+            btnConfirmarApagar.disabled = true;
+
+            fetch('/api/usuarios/me', {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Não foi possível apagar a conta. Tente novamente.');
+                }
+                return response;
+            })
+            .then(() => {
+                alert('Conta apagada com sucesso! Você será desconectado.');
+                
+                modalApagarConta.classList.add('escondido');
+                
+                // Reseta o estado global da aplicação
+                usuarioLogado = null;
+                midiaAtualEmDetalhe = null;
+                avaliacaoAtualDoUsuario = null;
+                idMidiaEmEdicao = null;
+
+                // Redireciona para a tela de login
+                telaApp.classList.add('escondido');
+                telaLogin.classList.remove('escondido');
+            })
+            .catch(error => {
+                console.error('Erro ao apagar conta:', error);
+                alert(error.message);
+                modalApagarConta.classList.add('escondido');
+            })
+            .finally(() => {
+                // Restaura o botão
+                btnConfirmarApagar.textContent = "Confirmar";
+                btnConfirmarApagar.disabled = false;
+            });
         });
     }
 

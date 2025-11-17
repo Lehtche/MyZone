@@ -2,7 +2,6 @@ package dev.JavaLovers.MyZone.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // opcional, caso precise de métodos HTTP específicos
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -41,9 +40,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/avaliacoes/**").hasRole("USER")
                 .requestMatchers("/api/tmdb/**").hasRole("USER")
 
-                /* // Exemplo para o futuro (se implementares ADMIN):
-                .requestMatchers("/api/admin/users").hasRole("ADMIN")
-                */
+                .requestMatchers("/api/usuarios/**").hasRole("USER")
 
                 // Exige autenticação para qualquer outra rota (Fallback)
                 .anyRequest().authenticated() 
