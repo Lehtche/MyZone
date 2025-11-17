@@ -17,4 +17,6 @@ public interface AvaliacaoRepository extends MongoRepository<Avaliacao, String> 
     Optional<Avaliacao> findByUsuarioIdAndMidiaId(Long usuarioId, Long midiaId);
     // Deleta todos os documentos do Mongo que pertencem a este usuarioId
     void deleteByUsuarioId(Long usuarioId);
+    // Deleta todos os documentos do Mongo que pertencem a esta midiaId
+    void deleteByMidiaId(Long midiaId);
 }

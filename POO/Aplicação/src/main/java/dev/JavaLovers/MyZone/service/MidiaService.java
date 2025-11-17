@@ -476,17 +476,14 @@ public class MidiaService {
     @Transactional
     public void deletarMidia(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
-        Midia midia = getMidiaPorId(midiaId);
-        if (!midia.getCadastradoPor().getId().equals(usuario.getId())) {
-             throw new RuntimeException("Acesso negado: Você não é o dono desta mídia.");
-        }
+        // Verifica a posse (o método getMidiaPorId é chamado internamente)
+        Midia midia = verificarPosse(midiaId, emailUsuario); //
         
-        List<Avaliacao> avaliacoes = avaliacaoService.listarAvaliacoesPorMidia(midiaId);
-        if (!avaliacoes.isEmpty()) {
-            // (Idealmente: avaliacaoService.deletarAvaliacoes(avaliacoes))
-        }
-        
-        midiaRepository.callDeletarMidia(midiaId, usuario.getId());
+        // 1. (NOVO) Deleta as avaliações do MongoDB primeiro
+        avaliacaoService.deletarAvaliacoesPorMidiaId(midiaId);
+
+        // 2. Deleta a mídia e dependências do MySQL (via Stored Procedure)
+        midiaRepository.callDeletarMidia(midiaId, usuario.getId()); //
     }
     private Midia verificarPosse(Long midiaId, String emailUsuario) {
         Usuario usuario = getUsuarioLogado(emailUsuario);
