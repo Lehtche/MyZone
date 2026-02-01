@@ -8,7 +8,7 @@ Projeto final para a disciplina de Laboratório de Banco de Dados, focado na imp
 
 Toda a documentação técnica do projeto, incluindo arquitetura, modelagem de dados, justificativas de SGBD (SQL e NoSQL) e metodologia, está disponível na pasta `/docs`.
 
-**[Clique aqui para ver a documentação completa](./docs/01-Introducao.md)**
+**[Clique aqui para ver a documentação completa](/docs/01-Introducao.md)**
 
 ### Tópicos da Documentação
 
