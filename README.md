@@ -20,7 +20,6 @@ Toda a documentação técnica do projeto, incluindo arquitetura, modelagem de d
 * [6. Controle de Acesso](/docs/06-Controle-de-Acesso.md)
 * [7. Modelagem do Banco NoSQL (MongoDB)](/docs/07-Banco-NoSQL-MongoDB.md)
 * [8. Guia de Execução](/docs/08-Guia-de-Execucao.md)
-* [9. Conclusão e Referências](/docs/09-Conclusao-e-Referencias.md)
 
 -----
 
